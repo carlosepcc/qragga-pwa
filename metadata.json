@@ -1,0 +1,6 @@
+{
+  "name": "QRagga",
+  "description": "A fully offline PWA barcodes reader and creator featuring niche 2D and 1D codes, advanced Material You styling, and custom shareable cards.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

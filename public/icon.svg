@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <!-- Background with Material You dynamic baseline color (Deep Violet) -->
+  <rect width="512" height="512" rx="128" fill="#6750A4"/>
+  
+  <!-- Zebra stripe pattern styled as barcode & QR hybrid in clean white -->
+  <g fill="#FFFFFF">
+    <!-- Barcode 1D Zebra Stripe style (Left half) -->
+    <rect x="90" y="110" width="16" height="292" rx="4"/>
+    <rect x="120" y="110" width="8" height="292" rx="2"/>
+    <rect x="140" y="110" width="24" height="292" rx="6"/>
+    <rect x="176" y="110" width="12" height="292" rx="3"/>
+    <rect x="200" y="110" width="6" height="292" rx="1"/>
+    <rect x="218" y="110" width="18" height="292" rx="4"/>
+    <rect x="246" y="110" width="10" height="292" rx="2"/>
+    
+    <!-- 2D QR Code Finder Pattern styled on top right -->
+    <path d="M 296 110 L 416 110 C 420 110 422 112 422 116 L 422 236 C 422 240 420 242 416 242 L 296 242 C 292 242 290 240 290 236 L 290 116 C 290 112 292 110 296 110 Z M 310 124 L 310 228 L 402 228 L 402 124 Z M 326 140 L 386 140 L 386 212 L 326 212 Z" />
+    
+    <!-- QR Pixels / Code dots blending with Zebra curves on bottom right -->
+    <rect x="290" y="270" width="24" height="24" rx="6"/>
+    <rect x="326" y="270" width="24" height="24" rx="6"/>
+    <rect x="386" y="270" width="36" height="24" rx="6"/>
+    
+    <rect x="290" y="306" width="48" height="24" rx="6"/>
+    <rect x="350" y="306" width="24" height="24" rx="6"/>
+    <rect x="398" y="306" width="24" height="24" rx="6"/>
+    
+    <rect x="290" y="342" width="24" height="24" rx="6"/>
+    <rect x="326" y="342" width="48" height="24" rx="6"/>
+    <rect x="386" y="342" width="36" height="24" rx="6"/>
+    
+    <rect x="290" y="378" width="36" height="24" rx="6"/>
+    <rect x="338" y="378" width="24" height="24" rx="6"/>
+    <rect x="374" y="378" width="48" height="24" rx="6"/>
+  </g>
+  
+  <!-- Sleek brand visual accent (soft glow / gradient effect overlay) -->
+  <circle cx="256" cy="256" r="230" fill="none" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="12"/>
+</svg>
