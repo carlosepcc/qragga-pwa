@@ -121,23 +121,16 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
   return (
     <div id="history-container" className="w-full max-w-6xl mx-auto p-4 md:p-6 flex flex-col gap-6">
       
-      {/* Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-[var(--md-sys-color-on-background)]">
-            History & Database
-          </h2>
-          <p className="text-sm opacity-80 text-[var(--md-sys-color-on-background)]">
-            Manage your offline scanned and customized barcode records, export JSON backups, and perform search recalls.
-          </p>
-        </div>
-
-        {/* Database backup actions */}
+      {/* Sleek Native Action Bar */}
+      <div className="flex items-center justify-between gap-4 border-b pb-4" style={{ borderColor: 'var(--md-sys-color-outline-variant)' }}>
+        <span className="text-xs font-bold uppercase tracking-wider text-[var(--md-sys-color-on-surface-variant)]">
+          Database Management
+        </span>
         <div className="flex items-center gap-2">
           <button
             onClick={handleExportBackup}
             disabled={history.length === 0}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold border hover:bg-black/5 dark:hover:bg-white/5 transition disabled:opacity-40"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold border hover:bg-black/5 dark:hover:bg-white/5 transition disabled:opacity-40 cursor-pointer"
             style={{
               color: 'var(--md-sys-color-primary, #6750A4)',
               borderColor: 'var(--md-sys-color-primary, #6750A4)',

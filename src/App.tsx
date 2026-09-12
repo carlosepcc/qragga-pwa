@@ -15,7 +15,9 @@ import {
   X, 
   ArrowUpRight,
   Shield,
-  Smartphone
+  Smartphone,
+  RotateCw,
+  Sparkles
 } from 'lucide-react';
 
 import { HistoryItem, MaterialPalette } from './types';
@@ -30,8 +32,44 @@ import { HistoryTab } from './components/HistoryTab';
 import { MaterialYouThemeSelector } from './components/MaterialYouThemeSelector';
 import { PWAInstallButton } from './components/PWAInstallButton';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { useRegisterSW } from 'virtual:pwa-register/react';
 
 export default function App() {
+  const {
+    needRefresh: [needRefresh, setNeedRefresh],
+    updateServiceWorker,
+  } = useRegisterSW({
+    onRegistered(r) {
+      if (r) {
+        // Check immediately on load
+        r.update();
+        // Check every 30 minutes
+        const checkInterval = setInterval(() => {
+          r.update().catch(err => console.debug('Failed to check for PWA update:', err));
+        }, 30 * 60 * 1000);
+        return () => clearInterval(checkInterval);
+      }
+    },
+    onRegisterError(error) {
+      console.error('PWA service worker registration failed:', error);
+    },
+  });
+
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+
+  // Check on visibility change (re-focusing tab, unlocking screen)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && 'serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(r => {
+          r.update().catch(err => console.debug('Failed to update SW on visibility change:', err));
+        });
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
   // Mobile Viewport Detection for Native Spring Sheet Layout
   const [isMobile, setIsMobile] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -50,19 +88,19 @@ export default function App() {
 
   // Universal Navigation Router
   const [activeTab, setActiveTab] = useState<'scan' | 'create' | 'history'>(() => {
-    if (typeof window === 'undefined') return 'scan';
+    if (typeof window === 'undefined') return 'create';
     const pathname = window.location.pathname;
     const hash = window.location.hash;
     const searchParams = new URLSearchParams(window.location.search);
     const queryTab = searchParams.get('tab') || searchParams.get('view');
 
-    if (pathname.endsWith('/create') || hash === '#/create' || hash === '#create' || queryTab === 'create') {
-      return 'create';
+    if (pathname.endsWith('/scan') || hash === '#/scan' || hash === '#scan' || queryTab === 'scan') {
+      return 'scan';
     }
     if (pathname.endsWith('/history') || hash === '#/history' || hash === '#history' || queryTab === 'history') {
       return 'history';
     }
-    return 'scan';
+    return 'create';
   });
 
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(() => {
@@ -202,6 +240,7 @@ export default function App() {
   // Creator Redirect parameters
   const [initialCreatorValue, setInitialCreatorValue] = useState<string>('');
   const [initialCreatorFormat, setInitialCreatorFormat] = useState<string>('qrcode');
+  const [autoOpenScanner, setAutoOpenScanner] = useState<boolean>(false);
 
   // Load / Sync Theme CSS custom properties
   useEffect(() => {
@@ -323,32 +362,6 @@ export default function App() {
         {/* Action icons stack */}
         <div className="flex flex-col gap-6 items-center">
           <button
-            onClick={() => navigateTo('scan')}
-            className="flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-300 relative group active:scale-95"
-          >
-            <div className="w-14 h-8 rounded-full flex items-center justify-center relative overflow-hidden transition-colors duration-300">
-              {activeTab === 'scan' && (
-                <motion.div
-                  layoutId="desktopActivePill"
-                  className="absolute inset-0 rounded-full"
-                  style={{ backgroundColor: 'var(--md-sys-color-secondary-container, #E8DEF8)' }}
-                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                />
-              )}
-              <ScanLine 
-                size={20} 
-                className="relative z-10 transition-colors duration-300" 
-                style={{
-                  color: activeTab === 'scan' 
-                    ? 'var(--md-sys-color-on-secondary-container, #1D192B)' 
-                    : 'var(--md-sys-color-on-surface-variant, #49454F)',
-                }}
-              />
-            </div>
-            <span className="text-[11px] font-medium tracking-tight">Scan</span>
-          </button>
-
-          <button
             onClick={() => {
               setInitialCreatorValue('');
               setInitialCreatorFormat('qrcode');
@@ -376,6 +389,32 @@ export default function App() {
               />
             </div>
             <span className="text-[11px] font-medium tracking-tight">Create</span>
+          </button>
+
+          <button
+            onClick={() => navigateTo('scan')}
+            className="flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-300 relative group active:scale-95"
+          >
+            <div className="w-14 h-8 rounded-full flex items-center justify-center relative overflow-hidden transition-colors duration-300">
+              {activeTab === 'scan' && (
+                <motion.div
+                  layoutId="desktopActivePill"
+                  className="absolute inset-0 rounded-full"
+                  style={{ backgroundColor: 'var(--md-sys-color-secondary-container, #E8DEF8)' }}
+                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                />
+              )}
+              <ScanLine 
+                size={20} 
+                className="relative z-10 transition-colors duration-300" 
+                style={{
+                  color: activeTab === 'scan' 
+                    ? 'var(--md-sys-color-on-secondary-container, #1D192B)' 
+                    : 'var(--md-sys-color-on-surface-variant, #49454F)',
+                }}
+              />
+            </div>
+            <span className="text-[11px] font-medium tracking-tight">Scanned</span>
           </button>
 
           <button
@@ -447,6 +486,34 @@ export default function App() {
             {/* Install trigger */}
             <PWAInstallButton variant="inline" />
 
+            {/* PWA Update trigger */}
+            {needRefresh && (
+              <button
+                onClick={() => setIsUpdateModalOpen(true)}
+                className="relative p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-primary)] transition active:scale-95 group"
+                title="Update available offline"
+              >
+                <motion.div
+                  animate={{ scale: [1, 1.25, 1] }}
+                  transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                  className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"
+                />
+                <RotateCw size={20} className="text-emerald-600 dark:text-emerald-400" />
+              </button>
+            )}
+
+            {/* Quick Scan overlay trigger */}
+            <button
+              onClick={() => {
+                navigateTo('scan');
+                setAutoOpenScanner(true);
+              }}
+              className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-primary)] transition active:scale-95"
+              title="Quick Scan"
+            >
+              <ScanLine size={20} />
+            </button>
+
             <button
               onClick={() => navigateTo('preferences')}
               className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-primary)] transition active:scale-95"
@@ -470,6 +537,11 @@ export default function App() {
             >
               {activeTab === 'scan' && (
                 <ScannerTab
+                  history={history}
+                  autoOpenScanner={autoOpenScanner}
+                  onScannerOpened={() => setAutoOpenScanner(false)}
+                  onToggleFavorite={handleToggleFavorite}
+                  onDeleteItem={handleDeleteItem}
                   onBarcodeDetected={(v, f) => {
                     // Cache values so if user hits "Personalize" in scanner card, it pre-fills the generator
                     setInitialCreatorValue(v);
@@ -513,32 +585,6 @@ export default function App() {
         }}
       >
         <button
-          onClick={() => navigateTo('scan')}
-          className="flex flex-col items-center gap-1 py-1 px-3 min-w-16 text-center active:scale-95"
-        >
-          <div className="px-5 py-1.5 rounded-full flex items-center justify-center relative overflow-hidden transition-all duration-300">
-            {activeTab === 'scan' && (
-              <motion.div
-                layoutId="mobileActivePill"
-                className="absolute inset-0 rounded-full"
-                style={{ backgroundColor: 'var(--md-sys-color-secondary-container, #E8DEF8)' }}
-                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-              />
-            )}
-            <ScanLine 
-              size={18} 
-              className="relative z-10 transition-colors duration-300" 
-              style={{
-                color: activeTab === 'scan' 
-                  ? 'var(--md-sys-color-on-secondary-container, #1D192B)' 
-                  : 'var(--md-sys-color-on-surface-variant, #49454F)',
-              }}
-            />
-          </div>
-          <span className="text-[10px] font-semibold tracking-tight mt-0.5">Scan</span>
-        </button>
-
-        <button
           onClick={() => {
             setInitialCreatorValue('');
             setInitialCreatorFormat('qrcode');
@@ -566,6 +612,32 @@ export default function App() {
             />
           </div>
           <span className="text-[10px] font-semibold tracking-tight mt-0.5">Create</span>
+        </button>
+
+        <button
+          onClick={() => navigateTo('scan')}
+          className="flex flex-col items-center gap-1 py-1 px-3 min-w-16 text-center active:scale-95"
+        >
+          <div className="px-5 py-1.5 rounded-full flex items-center justify-center relative overflow-hidden transition-all duration-300">
+            {activeTab === 'scan' && (
+              <motion.div
+                layoutId="mobileActivePill"
+                className="absolute inset-0 rounded-full"
+                style={{ backgroundColor: 'var(--md-sys-color-secondary-container, #E8DEF8)' }}
+                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+              />
+            )}
+            <ScanLine 
+              size={18} 
+              className="relative z-10 transition-colors duration-300" 
+              style={{
+                color: activeTab === 'scan' 
+                  ? 'var(--md-sys-color-on-secondary-container, #1D192B)' 
+                  : 'var(--md-sys-color-on-surface-variant, #49454F)',
+              }}
+            />
+          </div>
+          <span className="text-[10px] font-semibold tracking-tight mt-0.5">Scanned</span>
         </button>
 
         <button
@@ -707,6 +779,80 @@ export default function App() {
 
       {/* Connection & Toast Status overlays */}
       <OfflineIndicator />
+
+      {/* PWA Update Confirmation Dialog */}
+      <AnimatePresence>
+        {isUpdateModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsUpdateModalOpen(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            
+            {/* Dialog Content */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', duration: 0.3 }}
+              className="relative w-full max-w-sm rounded-3xl p-6 shadow-2xl border overflow-hidden z-10"
+              style={{
+                backgroundColor: 'var(--md-sys-color-surface-container-high, #F3EDF7)',
+                color: 'var(--md-sys-color-on-surface, #1D1B20)',
+                borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
+              }}
+            >
+              <div className="flex gap-4 items-start">
+                <div 
+                  className="p-3 rounded-2xl flex items-center justify-center flex-shrink-0"
+                  style={{
+                    backgroundColor: 'var(--md-sys-color-primary-container, #EADDFF)',
+                    color: 'var(--md-sys-color-on-primary-container, #21005D)',
+                  }}
+                >
+                  <Sparkles size={22} className="animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold">Update Ready!</h3>
+                  <p className="text-xs opacity-80 mt-1 leading-relaxed">
+                    A fresh version of QRagga has been downloaded silently in the background and is ready to load offline.
+                  </p>
+                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold mt-2">
+                    ✓ All files downloaded successfully
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 flex gap-2 justify-end">
+                <button
+                  onClick={() => setIsUpdateModalOpen(false)}
+                  className="px-4 py-2 rounded-full text-xs font-semibold tracking-wide hover:bg-black/5 transition"
+                  style={{ color: 'var(--md-sys-color-primary, #6750A4)' }}
+                >
+                  Keep Using Offline
+                </button>
+                <button
+                  onClick={() => {
+                    updateServiceWorker(true);
+                  }}
+                  className="px-4 py-2 rounded-full text-xs font-semibold tracking-wide shadow-sm hover:opacity-90 transition flex items-center gap-1.5"
+                  style={{
+                    backgroundColor: 'var(--md-sys-color-primary, #6750A4)',
+                    color: 'var(--md-sys-color-on-primary, #FFFFFF)',
+                  }}
+                >
+                  <RotateCw size={12} />
+                  Relaunch & Apply
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

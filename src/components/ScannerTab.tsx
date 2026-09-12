@@ -5,7 +5,29 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { BrowserMultiFormatReader, Result } from '@zxing/library';
-import { Camera, Clipboard, ExternalLink, Image as ImageIcon, Sparkles, Volume2, VolumeX, Zap, ZapOff } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  Camera, 
+  CameraOff, 
+  Clipboard, 
+  ExternalLink, 
+  Image as ImageIcon, 
+  Sparkles, 
+  Upload, 
+  Volume2, 
+  VolumeX, 
+  X, 
+  Zap, 
+  ZapOff,
+  ChevronRight,
+  Trash2,
+  Star,
+  Calendar,
+  Bookmark,
+  Check,
+  History,
+  Clock
+} from 'lucide-react';
 import { BARCODE_DEFINITIONS } from '../data/barcodes';
 import { HistoryItem } from '../types';
 
@@ -33,23 +55,48 @@ function playBeep() {
 }
 
 interface ScannerTabProps {
+  history: HistoryItem[];
+  autoOpenScanner?: boolean;
+  onScannerOpened?: () => void;
+  onToggleFavorite: (id: string) => void;
+  onDeleteItem: (id: string) => void;
   onBarcodeDetected: (value: string, format: string) => void;
   onSaveToHistory: (item: Omit<HistoryItem, 'id' | 'timestamp'>) => void;
   onNavigateToCreator: (value: string, format: string) => void;
 }
 
 export const ScannerTab: React.FC<ScannerTabProps> = ({
+  history = [],
+  autoOpenScanner = false,
+  onScannerOpened,
+  onToggleFavorite,
+  onDeleteItem,
   onBarcodeDetected,
   onSaveToHistory,
   onNavigateToCreator,
 }) => {
+  const [isFullscreenScannerOpen, setIsFullscreenScannerOpen] = useState<boolean>(false);
+
+  // Sync state with header trigger
+  useEffect(() => {
+    if (autoOpenScanner) {
+      setIsFullscreenScannerOpen(true);
+      if (onScannerOpened) {
+        onScannerOpened();
+      }
+    }
+  }, [autoOpenScanner, onScannerOpened]);
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [torchOn, setTorchOn] = useState<boolean>(false);
   const [hasFlash, setHasFlash] = useState<boolean>(false);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
-  const [scanResult, setScanResult] = useState<{ value: string; format: string } | null>(null);
+  
+  // Floating Card Result inside Scanner View
+  const [activeScanResult, setActiveScanResult] = useState<{ value: string; format: string } | null>(null);
+  const [hasSavedActiveResult, setHasSavedActiveResult] = useState<boolean>(false);
+
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [dragActive, setDragActive] = useState<boolean>(false);
 
@@ -57,6 +104,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanningRef = useRef<boolean>(false);
+  const lastScanTimeRef = useRef<number>(0);
 
   // Initialize ZXing Reader
   useEffect(() => {
@@ -68,20 +116,32 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
       .then((devices) => {
         setVideoDevices(devices);
         if (devices.length > 0) {
-          // Default to back camera if available, otherwise first camera
           const backCam = devices.find(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('environment'));
           setSelectedDeviceId(backCam ? backCam.deviceId : devices[0].deviceId);
         }
       })
       .catch((err) => {
         console.error('Error listing cameras on mount:', err);
-        // Do not block the user with a fatal error message immediately, as permissions may be prompted when launching.
       });
 
     return () => {
       stopCamera();
     };
   }, []);
+
+  // Safe camera lifecycle based on fullscreen trigger
+  useEffect(() => {
+    if (isFullscreenScannerOpen) {
+      startScanning(selectedDeviceId);
+    } else {
+      stopCamera();
+      setActiveScanResult(null);
+      setHasSavedActiveResult(false);
+    }
+    return () => {
+      stopCamera();
+    };
+  }, [isFullscreenScannerOpen, selectedDeviceId]);
 
   // Stop camera stream safely
   const stopCamera = () => {
@@ -100,15 +160,21 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
 
   // Start scanning
   const startScanning = async (deviceId: string) => {
-    if (!codeReaderRef.current || !videoRef.current) return;
+    if (!codeReaderRef.current) return;
+    if (!videoRef.current) {
+      // Retry in the next animation frame if videoRef isn't bound yet and scanner is still open
+      if (isFullscreenScannerOpen) {
+        requestAnimationFrame(() => startScanning(deviceId));
+      }
+      return;
+    }
     
     stopCamera();
     setErrorMsg('');
-    setScanResult(null);
 
-    // Verify browser support for media devices (required for Chrome/Android secure contexts)
+    // Verify browser support for media devices
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setErrorMsg('Camera access is not supported by your browser or in this window. If you are inside an app container, please tap the top-right menu to open this app directly in a new browser tab.');
+      setErrorMsg('Camera access is not supported by your browser or in this window. Try opening the app in a new tab.');
       return;
     }
 
@@ -116,22 +182,19 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
       setIsScanning(true);
       scanningRef.current = true;
 
-      // Force prompt the browser for camera permissions explicitly before ZXing initialization.
-      // This ensures Chrome for Android displays the native prompt and registers permission under site settings.
+      // Request stream explicitly
       let tempStream: MediaStream | null = null;
       try {
         tempStream = await navigator.mediaDevices.getUserMedia({ 
           video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: 'environment' } 
         });
-        // Stop the temp stream immediately; we only wanted to ensure permissions are granted and active
         tempStream.getTracks().forEach(track => track.stop());
       } catch (permErr: any) {
-        console.warn('Explicit getUserMedia permission check failed or denied:', permErr);
-        // Throw to the catch block so the proper permission denied instructions are shown to the user
+        console.warn('Explicit getUserMedia permission check failed:', permErr);
         throw permErr;
       }
       
-      // We start decoding from video device. Use deviceId or undefined (default constraint)
+      // Decode from device
       await codeReaderRef.current.decodeFromVideoDevice(
         deviceId || undefined,
         videoRef.current,
@@ -142,22 +205,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
         }
       );
 
-      // Refresh devices list after stream starts successfully (as permissions are now guaranteed)
-      try {
-        const devices = await codeReaderRef.current.listVideoInputDevices();
-        setVideoDevices(devices);
-        if (devices.length > 0) {
-          const backCam = devices.find(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('environment'));
-          if (!selectedDeviceId) {
-            setSelectedDeviceId(backCam ? backCam.deviceId : devices[0].deviceId);
-          }
-        }
-      } catch (deviceErr) {
-        console.error('Error listing cameras after permission:', deviceErr);
-      }
-
       // Try to acquire the stream to detect torch/flash capability
-      // ZXing manages the video element stream, we can inspect its tracks
       const stream = videoRef.current.srcObject as MediaStream;
       if (stream) {
         streamRef.current = stream;
@@ -175,13 +223,13 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
       setIsScanning(false);
       scanningRef.current = false;
 
-      let errMsg = 'Could not open camera stream. Make sure permissions are granted and the camera is not in use by another app.';
+      let errMsg = 'Could not open camera stream. Make sure permissions are granted and the camera is not in use.';
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        errMsg = 'Camera permission denied. To enable on Chrome for Android: tap the connection settings/sliders icon to the left of the URL bar, select "Site settings", find "Camera", and set it to "Allow".';
+        errMsg = 'Camera permission denied. To enable: tap site permissions in your browser address bar and choose "Allow".';
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
         errMsg = 'No camera device found on this system.';
       } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-        errMsg = 'Camera is already in use by another application or tab. Please close other apps and try again.';
+        errMsg = 'Camera is already in use by another application or tab.';
       }
       setErrorMsg(errMsg);
     }
@@ -209,6 +257,13 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
     const text = result.getText();
     const formatCode = result.getBarcodeFormat().toString().toLowerCase();
     
+    // Throttle to avoid repeated beep storms
+    const now = Date.now();
+    if (activeScanResult?.value === text && now - lastScanTimeRef.current < 2000) {
+      return;
+    }
+    lastScanTimeRef.current = now;
+
     // Map ZXing format strings to QRagga BarcodeTypes
     let mappedFormat = 'qrcode';
     if (formatCode.includes('qr')) mappedFormat = 'qrcode';
@@ -224,40 +279,65 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
     else if (formatCode.includes('itf')) mappedFormat = 'itf';
 
     // Play feedback
-    if (soundEnabled) {
-      playBeep();
-    }
-    if (navigator.vibrate) {
-      navigator.vibrate(100);
-    }
+    if (soundEnabled) playBeep();
+    if (navigator.vibrate) navigator.vibrate(100);
 
-    setScanResult({ value: text, format: mappedFormat });
-    onBarcodeDetected(text, mappedFormat);
+    // Set active result. Note we DO NOT save to history yet!
+    setActiveScanResult({ value: text, format: mappedFormat });
+    setHasSavedActiveResult(false);
+  };
 
-    // Auto-save Scanned item to Offline History
+  // Explicit Save Trigger (Interaction)
+  const handleSaveActiveResult = () => {
+    if (!activeScanResult || hasSavedActiveResult) return;
+    
     onSaveToHistory({
       type: 'scanned',
-      format: mappedFormat as any,
-      value: text,
+      format: activeScanResult.format as any,
+      value: activeScanResult.value,
       isFavorite: false,
-      label: `Scanned ${getFormatDisplayName(mappedFormat)}`
+      label: `Scanned ${getFormatDisplayName(activeScanResult.format)}`
     });
 
-    // Pause camera stream after scan to conserve power
-    stopCamera();
+    onBarcodeDetected(activeScanResult.value, activeScanResult.format);
+    setHasSavedActiveResult(true);
+  };
+
+  const handleCopyActiveResult = () => {
+    if (!activeScanResult) return;
+    navigator.clipboard.writeText(activeScanResult.value);
+    handleSaveActiveResult();
+  };
+
+  const handleOpenLinkActiveResult = () => {
+    if (!activeScanResult) return;
+    window.open(activeScanResult.value, '_blank');
+    handleSaveActiveResult();
+  };
+
+  const handleCustomizeActiveResult = () => {
+    if (!activeScanResult) return;
+    handleSaveActiveResult();
+    onNavigateToCreator(activeScanResult.value, activeScanResult.format);
+    setIsFullscreenScannerOpen(false); // Go directly to creator
+  };
+
+  const handleDismissActiveResult = () => {
+    setActiveScanResult(null);
+    setHasSavedActiveResult(false);
   };
 
   // Decode from file upload
   const handleFileUpload = async (file: File) => {
     if (!codeReaderRef.current) return;
     setErrorMsg('');
-    setScanResult(null);
+    setActiveScanResult(null);
+    setHasSavedActiveResult(false);
 
     try {
       const imageUrl = URL.createObjectURL(file);
       const result = await codeReaderRef.current.decodeFromImageUrl(imageUrl);
       
-      // Cleanup object URL
       URL.revokeObjectURL(imageUrl);
       
       if (result) {
@@ -267,7 +347,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
       }
     } catch (err) {
       console.error('File scan error:', err);
-      setErrorMsg('Failed to read code from this image. Ensure the barcode is clear, well-lit, and fits in frame.');
+      setErrorMsg('Failed to read code from this image. Make sure it is clear and well-lit.');
     }
   };
 
@@ -294,12 +374,6 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
     }
   };
 
-  const copyToClipboard = () => {
-    if (scanResult) {
-      navigator.clipboard.writeText(scanResult.value);
-    }
-  };
-
   const getFormatDisplayName = (fmt: string) => {
     const def = BARCODE_DEFINITIONS.find(d => d.id === fmt);
     return def ? def.name : fmt.toUpperCase();
@@ -314,297 +388,469 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
     }
   };
 
+  // Filter history to ONLY show scanned codes
+  const scannedHistory = (history || []).filter(item => item.type === 'scanned');
+  const sortedScanned = [...scannedHistory].sort((a, b) => 
+    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
+
   return (
-    <div id="scanner-container" className="flex flex-col gap-6 w-full max-w-4xl mx-auto p-4 md:p-6">
-      
-      {/* Title block */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-[var(--md-sys-color-on-background)]">
-            Scan Codes
-          </h2>
-          <p className="text-sm opacity-80 text-[var(--md-sys-color-on-background)]">
-            Scan any 1D barcode or niche 2D code offline using your camera or an image file.
-          </p>
-        </div>
+    <>
+      {/* ==================== SCREEN 1: "SCANNED" HISTORY & LAUNCHER ==================== */}
+      <div className="max-w-3xl mx-auto px-4 py-6 md:py-8 select-none">
         
-        {/* Connection/Vibe controls */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-primary)] transition"
-            title={soundEnabled ? 'Mute beep' : 'Enable beep'}
-          >
-            {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        {/* Left column: Stream / Upload */}
-        <div className="lg:col-span-7 flex flex-col gap-4">
-          
-          {/* Main scanning box */}
-          <div 
-            id="scanner-viewport"
-            className="relative w-full aspect-square md:aspect-[4/3] rounded-3xl overflow-hidden shadow-inner border"
-            style={{
-              backgroundColor: 'var(--md-sys-color-surface-container-highest, #E7E0EC)',
-              borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
-            }}
-          >
-            {/* Camera Viewport */}
-            <div className={`w-full h-full relative ${isScanning ? 'block' : 'hidden'}`}>
-              <video
-                ref={videoRef}
-                className="w-full h-full object-cover rounded-3xl"
-                playsInline
-                muted
-              />
-              
-              {/* Laser animation overlays */}
-              <div className="absolute inset-0 border-[32px] border-black/40 pointer-events-none flex items-center justify-center">
-                <div className="w-full h-full border-2 border-dashed border-[var(--md-sys-color-primary)] relative rounded-xl opacity-90">
-                  {/* Pulsing Target corners */}
-                  <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-[var(--md-sys-color-primary)] -mt-1 -ml-1"></div>
-                  <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-[var(--md-sys-color-primary)] -mt-1 -mr-1"></div>
-                  <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-[var(--md-sys-color-primary)] -mb-1 -ml-1"></div>
-                  <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-[var(--md-sys-color-primary)] -mb-1 -mr-1"></div>
-                  
-                  {/* Laser scanning line */}
-                  <div className="absolute w-full h-[3px] bg-red-500 top-0 left-0 animate-[scan_2s_infinite_linear] shadow-[0_0_10px_#ef4444]"></div>
-                </div>
-              </div>
-
-              {/* Over-camera Floating indicators */}
-              <div className="absolute top-4 right-4 flex gap-2">
-                {hasFlash && (
-                  <button
-                    onClick={toggleTorch}
-                    className="p-3 rounded-full shadow bg-black/60 text-white hover:bg-black/80 transition active:scale-90"
-                    title="Toggle flashlight"
-                  >
-                    {torchOn ? <ZapOff size={18} /> : <Zap size={18} />}
-                  </button>
-                )}
-                
-                <button
-                  onClick={stopCamera}
-                  className="px-4 py-2 rounded-full text-xs font-semibold shadow bg-red-600 text-white hover:bg-red-700 transition active:scale-90"
-                >
-                  Stop Camera
-                </button>
-              </div>
-            </div>
-
-            {/* Launch Camera / Drag & Drop Placeholder Viewport */}
+        {/* Launcher Item */}
+        <button
+          id="btn-launch-fullscreen-scanner"
+          onClick={() => setIsFullscreenScannerOpen(true)}
+          className="w-full flex items-center justify-between p-6 rounded-[24px] border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-[var(--md-sys-color-primary)] dark:hover:border-[var(--md-sys-color-primary)] hover:bg-[var(--md-sys-color-primary-container)]/10 dark:hover:bg-[var(--md-sys-color-primary-container)]/5 transition-all duration-300 active:scale-[0.98] mb-8 text-left"
+          style={{
+            backgroundColor: 'var(--md-sys-color-surface-container-high, #ECE6F0)',
+            color: 'var(--md-sys-color-on-surface, #1D1B20)',
+          }}
+        >
+          <div className="flex items-center gap-4">
             <div 
-              className={`w-full h-full flex-col items-center justify-center p-6 text-center transition-all ${isScanning ? 'hidden' : 'flex'} ${dragActive ? 'scale-[0.98]' : ''}`}
-              onDragOver={onDragOver}
-              onDragLeave={onDragLeave}
-              onDrop={onDrop}
+              className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner"
               style={{
-                border: dragActive ? '3px dashed var(--md-sys-color-primary)' : '1px solid transparent',
-                backgroundColor: dragActive ? 'var(--md-sys-color-primary-container, #EADDFF)' : 'transparent',
+                backgroundColor: 'var(--md-sys-color-primary-container, #EADDFF)',
+                color: 'var(--md-sys-color-on-primary-container, #21005D)',
               }}
             >
-              <div 
-                className="p-4 rounded-3xl mb-4"
-                style={{
-                  backgroundColor: 'var(--md-sys-color-primary-container, #EADDFF)',
-                  color: 'var(--md-sys-color-on-primary-container, #21005D)',
-                }}
-              >
-                <Camera size={40} className="opacity-90" />
-              </div>
-              
-              <h3 className="text-lg font-bold tracking-tight mb-1 text-[var(--md-sys-color-on-surface)]">
-                Start Camera Scan
-              </h3>
-              <p className="text-xs max-w-xs opacity-75 mb-6 text-[var(--md-sys-color-on-surface)] leading-relaxed">
-                Grant camera permissions to scan instantly, or drag and drop a barcode picture here.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-3 items-center">
-                <button
-                  onClick={() => startScanning(selectedDeviceId)}
-                  className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold tracking-wide shadow-md hover:shadow-lg hover:opacity-95 transition-all duration-300 active:scale-95"
-                  style={{
-                    backgroundColor: 'var(--md-sys-color-primary, #6750A4)',
-                    color: 'var(--md-sys-color-on-primary, #FFFFFF)',
-                  }}
-                >
-                  <Camera size={16} />
-                  <span>Launch Camera</span>
-                </button>
-
-                <label className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold tracking-wide border cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition active:scale-95"
-                  style={{
-                    color: 'var(--md-sys-color-primary, #6750A4)',
-                    borderColor: 'var(--md-sys-color-outline, #79747E)',
-                  }}
-                >
-                  <ImageIcon size={16} />
-                  <span>Upload Image</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={onFileChange}
-                  />
-                </label>
-              </div>
+              <Camera size={26} className="stroke-[2]" />
+            </div>
+            <div>
+              <h3 className="font-bold text-base tracking-tight">Scan Another Code</h3>
+              <p className="text-xs opacity-70 mt-0.5">Launches the fullscreen camera reader</p>
             </div>
           </div>
+          <ChevronRight size={20} className="opacity-60" />
+        </button>
 
-          {/* Camera Selector */}
-          {videoDevices.length > 1 && !isScanning && (
-            <div className="flex flex-col gap-1.5 p-4 rounded-2xl border"
-              style={{
-                backgroundColor: 'var(--md-sys-color-surface-container-low, #F7F2FA)',
-                borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
-              }}
-            >
-              <label className="text-xs font-semibold uppercase tracking-wider text-[var(--md-sys-color-on-surface-variant)]">
-                Select Active Camera
-              </label>
-              <select
-                value={selectedDeviceId}
-                onChange={(e) => setSelectedDeviceId(e.target.value)}
-                className="w-full bg-transparent text-sm py-1 font-medium border-b focus:outline-none"
+        {/* History Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Clock size={16} className="text-[var(--md-sys-color-primary)]" />
+            <h2 className="font-bold text-base tracking-tight text-[var(--md-sys-color-on-surface)]">
+              Scanned Codes History
+            </h2>
+          </div>
+          <span 
+            className="text-xs font-bold px-2.5 py-1 rounded-full"
+            style={{
+              backgroundColor: 'var(--md-sys-color-secondary-container, #E8DEF8)',
+              color: 'var(--md-sys-color-on-secondary-container, #1D192B)',
+            }}
+          >
+            {sortedScanned.length} items
+          </span>
+        </div>
+
+        {/* History List */}
+        <div className="space-y-3.5">
+          {sortedScanned.length > 0 ? (
+            sortedScanned.map((item) => (
+              <div
+                key={item.id}
+                id={`scanned-item-${item.id}`}
+                className="p-4 rounded-2xl border flex items-center justify-between gap-4 transition hover:shadow-sm"
                 style={{
-                  color: 'var(--md-sys-color-on-surface, #1D1B20)',
+                  backgroundColor: 'var(--md-sys-color-surface-container-low, #F7F2FA)',
                   borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
                 }}
               >
-                {videoDevices.map((device) => (
-                  <option key={device.deviceId} value={device.deviceId} className="dark:bg-zinc-800">
-                    {device.label || `Camera ${videoDevices.indexOf(device) + 1}`}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {errorMsg && (
-            <div className="p-4 rounded-2xl border text-sm text-red-700 bg-red-50 dark:bg-red-950/30 dark:text-red-200"
-              style={{
-                borderColor: 'var(--md-sys-color-error, #BA1A1A)',
-              }}
-            >
-              {errorMsg}
-            </div>
-          )}
-        </div>
-
-        {/* Right column: Scanned result details */}
-        <div className="lg:col-span-5 flex flex-col gap-4">
-          <div 
-            id="scanned-result-card"
-            className="rounded-3xl p-6 border shadow-sm h-full flex flex-col"
-            style={{
-              backgroundColor: 'var(--md-sys-color-surface-container-low, #F7F2FA)',
-              borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
-            }}
-          >
-            <h3 className="text-lg font-bold tracking-tight text-[var(--md-sys-color-on-surface)] mb-4">
-              Latest Scan Result
-            </h3>
-
-            {scanResult ? (
-              <div className="flex flex-col gap-5 flex-grow">
-                {/* Result metadata badge */}
-                <div className="flex items-center gap-2.5">
-                  <span className="px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase"
-                    style={{
-                      backgroundColor: 'var(--md-sys-color-primary-container, #EADDFF)',
-                      color: 'var(--md-sys-color-on-primary-container, #21005D)',
-                    }}
-                  >
-                    {getFormatDisplayName(scanResult.format)}
-                  </span>
-                </div>
-
-                {/* Value textbox */}
-                <div className="flex flex-col gap-1">
-                  <span className="text-xs font-semibold text-[var(--md-sys-color-on-surface-variant)] uppercase tracking-wider">
-                    Decoded Value
-                  </span>
-                  <div className="w-full bg-white dark:bg-zinc-900 rounded-2xl p-4 border break-all text-sm font-mono max-h-48 overflow-y-auto"
-                    style={{
-                      borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
-                      color: 'var(--md-sys-color-on-surface, #1D1B20)',
-                    }}
-                  >
-                    {scanResult.value}
+                <div className="flex items-center gap-3 min-w-0">
+                  <div 
+                    className="w-1.5 h-11 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: 'var(--md-sys-color-tertiary, #7D5260)' }}
+                  />
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-[var(--md-sys-color-primary)]">
+                        {getFormatDisplayName(item.format)}
+                      </span>
+                      {item.label && (
+                        <span className="text-[10px] opacity-75 truncate max-w-[120px]">
+                          • {item.label}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm font-mono truncate max-w-xs md:max-w-md text-[var(--md-sys-color-on-surface)] mt-0.5">
+                      {item.value}
+                    </p>
+                    <span className="text-[9px] opacity-60 flex items-center gap-1 mt-0.5">
+                      <Calendar size={8} />
+                      {new Date(item.timestamp).toLocaleDateString()} at {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="flex flex-col gap-2 mt-auto pt-4 border-t"
-                  style={{
-                    borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
-                  }}
-                >
-                  <button
-                    onClick={copyToClipboard}
-                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-full text-sm font-semibold tracking-wide border hover:bg-black/5 dark:hover:bg-white/5 transition"
-                    style={{
-                      color: 'var(--md-sys-color-primary, #6750A4)',
-                      borderColor: 'var(--md-sys-color-primary, #6750A4)',
-                    }}
-                  >
-                    <Clipboard size={16} />
-                    <span>Copy to Clipboard</span>
-                  </button>
-
-                  {isUrl(scanResult.value) && (
+                {/* Scanned Row Actions (Preferred no text iconbuttons) */}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {isUrl(item.value) && (
                     <a
-                      href={scanResult.value}
+                      href={item.value}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-2.5 rounded-full text-sm font-semibold tracking-wide text-white hover:opacity-90 transition shadow-sm text-center"
-                      style={{
-                        backgroundColor: 'var(--md-sys-color-secondary, #625B71)',
-                      }}
+                      className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-primary)] transition"
+                      title="Open link"
                     >
                       <ExternalLink size={16} />
-                      <span>Open Link</span>
                     </a>
                   )}
 
                   <button
-                    onClick={() => onNavigateToCreator(scanResult.value, scanResult.format)}
-                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-full text-sm font-semibold tracking-wide text-white hover:opacity-90 transition shadow-md"
-                    style={{
-                      backgroundColor: 'var(--md-sys-color-primary, #6750A4)',
+                    onClick={() => {
+                      navigator.clipboard.writeText(item.value);
                     }}
+                    className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-outline)] transition"
+                    title="Copy value"
+                  >
+                    <Clipboard size={16} />
+                  </button>
+
+                  <button
+                    onClick={() => onNavigateToCreator(item.value, item.format)}
+                    className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-outline)] transition"
+                    title="Recreate / Customize"
                   >
                     <Sparkles size={16} />
-                    <span>Design Card & Recreate</span>
+                  </button>
+
+                  <button
+                    onClick={() => onToggleFavorite(item.id)}
+                    className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition"
+                    style={{
+                      color: item.isFavorite ? '#E0A800' : 'var(--md-sys-color-outline, #79747E)'
+                    }}
+                    title={item.isFavorite ? 'Unfavorite' : 'Favorite'}
+                  >
+                    <Star size={16} fill={item.isFavorite ? '#E0A800' : 'none'} />
+                  </button>
+
+                  <button
+                    onClick={() => onDeleteItem(item.id)}
+                    className="p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-950/20 text-red-500 hover:text-red-700 transition"
+                    title="Delete item"
+                  >
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center text-center py-12 flex-grow">
-                <p className="text-sm opacity-60 text-[var(--md-sys-color-on-surface)]">
-                  No scan recorded in this session. Start the camera or upload an image above to decode.
+            ))
+          ) : (
+            <div className="flex flex-col items-center justify-center p-12 text-center rounded-3xl border border-dashed border-zinc-300 dark:border-zinc-800">
+              <History size={36} className="text-zinc-300 dark:text-zinc-700 mb-2" />
+              <p className="text-sm opacity-60 text-[var(--md-sys-color-on-background)]">
+                No scanned barcodes found in your offline history.
+              </p>
+              <button
+                onClick={() => setIsFullscreenScannerOpen(true)}
+                className="mt-3 text-xs font-bold text-[var(--md-sys-color-primary)] hover:underline"
+              >
+                Scan your first code
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ==================== SCREEN 2: FULLSCREEN LIVE VIEW CAMERA OVERLAY ==================== */}
+      <AnimatePresence>
+        {isFullscreenScannerOpen && (
+          <motion.div
+            id="fullscreen-scanner"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-50 bg-black flex flex-col select-none overflow-hidden"
+            onDragOver={onDragOver}
+            onDragLeave={onDragLeave}
+            onDrop={onDrop}
+          >
+            {/* Live Camera Feed Viewport */}
+            <div className="absolute inset-0 w-full h-full z-0 overflow-hidden bg-zinc-950">
+              <div className="w-full h-full relative">
+                <video
+                  ref={videoRef}
+                  className={`w-full h-full object-cover animate-fade-in ${isScanning ? 'opacity-100' : 'opacity-0 pointer-events-none absolute'}`}
+                  playsInline
+                  muted
+                />
+
+                {isScanning && (
+                  /* Central HUD Targeting Frame - white corners, no square borders */
+                  <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+                    <div className="w-64 h-64 md:w-80 md:h-80 relative flex items-center justify-center bg-transparent">
+                      {/* White bracket corners */}
+                      <div className="absolute top-0 left-0 w-9 h-9 border-t-4 border-l-4 border-white rounded-tl-[20px]"></div>
+                      <div className="absolute top-0 right-0 w-9 h-9 border-t-4 border-r-4 border-white rounded-tr-[20px]"></div>
+                      <div className="absolute bottom-0 left-0 w-9 h-9 border-b-4 border-l-4 border-white rounded-bl-[20px]"></div>
+                      <div className="absolute bottom-0 right-0 w-9 h-9 border-b-4 border-r-4 border-white rounded-br-[20px]"></div>
+                    </div>
+                    
+                    <span className="mt-8 px-4.5 py-2 rounded-full bg-white/10 border border-black/30 text-white text-[10px] font-extrabold uppercase tracking-widest backdrop-blur-md">
+                      Point camera at QR or Barcode
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {!isScanning && (
+                /* Connecting camera spinner */
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-400 bg-zinc-950 z-10">
+                  <div className="w-12 h-12 rounded-full border-4 border-zinc-700 border-t-white animate-spin mb-4" />
+                  <p className="text-xs font-medium tracking-wide">Initializing secure viewfinder...</p>
+                </div>
+              )}
+            </div>
+
+            {/* Floating Top HUD Bar - whiteAlpha style with blackAlpha stroke */}
+            <div className="absolute top-5 left-5 right-5 z-20 flex justify-between items-center pointer-events-none">
+              
+              {/* Left Side: Camera Selection Dropdown */}
+              <div className="pointer-events-auto">
+                {videoDevices.length > 1 ? (
+                  <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-lg px-3.5 py-2 rounded-full border border-black/30 text-white">
+                    <Camera size={14} className="opacity-90" />
+                    <select
+                      value={selectedDeviceId || ''}
+                      onChange={(e) => setSelectedDeviceId(e.target.value)}
+                      className="bg-transparent text-white text-xs font-bold outline-none border-none pr-1.5 cursor-pointer"
+                    >
+                      {videoDevices.map((device, idx) => (
+                        <option key={device.deviceId} value={device.deviceId} className="bg-zinc-950 text-white text-xs">
+                          {device.label ? device.label.replace(/\([^)]+\)/, '') : `Camera ${idx + 1}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <span className="bg-white/15 backdrop-blur-lg px-3.5 py-2 rounded-full border border-black/30 text-[10px] font-extrabold tracking-wider text-white/90 uppercase">
+                    Live Lens
+                  </span>
+                )}
+              </div>
+
+              {/* Right Side HUD Controls: Pure Icon Buttons with NO text */}
+              <div className="pointer-events-auto flex gap-2.5 items-center">
+                
+                {/* Sound feedback switch */}
+                <button
+                  type="button"
+                  onClick={() => setSoundEnabled(!soundEnabled)}
+                  className="p-3.5 rounded-full bg-white/15 border border-black/30 text-white hover:bg-white/25 transition active:scale-90 cursor-pointer backdrop-blur-lg"
+                  title={soundEnabled ? 'Mute beep feedback' : 'Unmute beep feedback'}
+                >
+                  {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+                </button>
+
+                {/* Flashlight switch */}
+                {hasFlash && (
+                  <button
+                    type="button"
+                    onClick={toggleTorch}
+                    className="p-3.5 rounded-full bg-white/15 border border-black/30 text-white hover:bg-white/25 transition active:scale-90 cursor-pointer backdrop-blur-lg"
+                    title="Toggle device flash"
+                  >
+                    {torchOn ? <ZapOff size={18} /> : <Zap size={18} />}
+                  </button>
+                )}
+
+                {/* Import Image from File */}
+                <label 
+                  className="p-3.5 rounded-full bg-white/15 border border-black/30 text-white hover:bg-white/25 transition active:scale-90 cursor-pointer backdrop-blur-lg flex items-center justify-center"
+                  title="Scan from image file"
+                >
+                  <Upload size={18} />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={onFileChange}
+                    className="hidden"
+                  />
+                </label>
+
+                {/* Close Fullscreen Overlay */}
+                <button
+                  type="button"
+                  onClick={() => setIsFullscreenScannerOpen(false)}
+                  className="p-3.5 rounded-full bg-white/15 border border-black/30 text-white hover:bg-white/25 transition active:scale-90 cursor-pointer backdrop-blur-lg"
+                  title="Close scanner"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Drag Over Shield */}
+            {dragActive && (
+              <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-lg z-50 flex flex-col items-center justify-center p-6 text-center select-none animate-in fade-in duration-200">
+                <div className="p-5 rounded-full bg-white text-zinc-950 mb-4 shadow-2xl animate-bounce">
+                  <Upload size={36} />
+                </div>
+                <h2 className="text-xl font-extrabold tracking-tight text-white mb-1.5">
+                  Release to Parse Image
+                </h2>
+                <p className="text-xs text-zinc-400 max-w-xs leading-relaxed">
+                  Drop your code picture anywhere to decode instantly offline.
                 </p>
               </div>
             )}
-          </div>
-        </div>
 
-      </div>
+            {/* Floating Card Scan Result: Wide but Low-Height Overlay */}
+            {/* Supports Drag-to-Dismiss Swiping downwards! */}
+            <AnimatePresence>
+              {activeScanResult && (
+                <motion.div
+                  id="wide-scan-result-card"
+                  initial={{ y: '100%', opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: '100%', opacity: 0 }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+                  drag="y"
+                  dragConstraints={{ top: 0, bottom: 200 }}
+                  dragElastic={0.4}
+                  onDragEnd={(event, info) => {
+                    // Swipe down threshold
+                    if (info.offset.y > 80) {
+                      handleDismissActiveResult();
+                    }
+                  }}
+                  className="fixed bottom-6 left-4 right-4 md:left-1/2 md:right-auto md:w-[500px] md:-translate-x-1/2 z-40 rounded-3xl p-4.5 border shadow-[0_10px_40px_rgba(0,0,0,0.7)] flex flex-col backdrop-blur-2xl cursor-grab active:cursor-grabbing select-none"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.92)', // Gorgeous whiteAlpha overlay
+                    borderColor: 'rgba(0, 0, 0, 0.25)', // blackAlpha border stroke
+                    color: '#111827' // Clean dark-zinc text for WCAG contrast AA check
+                  }}
+                >
+                  {/* Swipe Grab Indicator */}
+                  <div className="w-10 h-1 bg-zinc-400/55 rounded-full mx-auto mb-2.5 flex-shrink-0" />
 
-      <style>{`
-        @keyframes scan {
-          0% { top: 0%; }
-          50% { top: 100%; }
-          100% { top: 0%; }
-        }
-      `}</style>
-    </div>
+                  <div className="flex items-center justify-between gap-4">
+                    {/* Left Column: Icon & Scan Info */}
+                    <div className="flex flex-col gap-1 min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-zinc-950 text-white">
+                          {getFormatDisplayName(activeScanResult.format)}
+                        </span>
+                        {hasSavedActiveResult && (
+                          <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
+                            <Check size={9} strokeWidth={3} /> SAVED
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Scanned Decoded Value (wide and truncated to keep height very low) */}
+                      <p className="text-xs font-mono break-all line-clamp-2 leading-relaxed text-zinc-800 pr-2">
+                        {activeScanResult.value}
+                      </p>
+                    </div>
+
+                    {/* Right Column: Interaction Action Buttons (No text, pure icon buttons) */}
+                    <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                      
+                      {/* Copy Action */}
+                      <button
+                        onClick={handleCopyActiveResult}
+                        className={`p-2.5 rounded-full border transition active:scale-95 ${
+                          hasSavedActiveResult 
+                            ? 'bg-zinc-100 text-zinc-500 border-zinc-200' 
+                            : 'bg-white hover:bg-zinc-50 text-zinc-900 border-zinc-300 shadow-sm'
+                        }`}
+                        title="Copy text & save"
+                      >
+                        <Clipboard size={16} />
+                      </button>
+
+                      {/* Open Link Action (if URL) */}
+                      {isUrl(activeScanResult.value) && (
+                        <button
+                          onClick={handleOpenLinkActiveResult}
+                          className="p-2.5 rounded-full bg-zinc-950 hover:bg-zinc-800 text-white transition active:scale-95 shadow-sm border border-zinc-800"
+                          title="Open link in new tab"
+                        >
+                          <ExternalLink size={16} />
+                        </button>
+                      )}
+
+                      {/* Recreate & Design Action */}
+                      <button
+                        onClick={handleCustomizeActiveResult}
+                        className="p-2.5 rounded-full bg-[var(--md-sys-color-primary,#6750A4)] text-white hover:opacity-90 transition active:scale-95 shadow-sm border border-black/10"
+                        title="Personalize / Redesign this code"
+                      >
+                        <Sparkles size={16} />
+                      </button>
+
+                      {/* Save Explicit Action */}
+                      {!hasSavedActiveResult && (
+                        <button
+                          onClick={handleSaveActiveResult}
+                          className="p-2.5 rounded-full bg-white hover:bg-zinc-50 text-zinc-900 border border-zinc-300 shadow-sm transition active:scale-95"
+                          title="Save to history list"
+                        >
+                          <Bookmark size={16} />
+                        </button>
+                      )}
+
+                      {/* Dismiss Result Button */}
+                      <button
+                        onClick={handleDismissActiveResult}
+                        className="p-2.5 rounded-full hover:bg-zinc-200/80 text-zinc-600 transition active:scale-95 border border-transparent"
+                        title="Dismiss"
+                      >
+                        <X size={16} />
+                      </button>
+
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Error Center Sheet overlay (within fullscreen reader) */}
+            {errorMsg && (
+              <div className="absolute inset-0 flex items-center justify-center p-6 bg-zinc-950/85 backdrop-blur-lg z-40 text-center">
+                <div className="max-w-md w-full rounded-[32px] p-6 bg-white border border-zinc-200 shadow-2xl flex flex-col items-center animate-in scale-in duration-300 text-zinc-950">
+                  <div className="p-4 rounded-3xl mb-4 text-red-600 bg-red-50">
+                    <CameraOff size={36} />
+                  </div>
+                  <h3 className="text-lg font-bold tracking-tight mb-2">
+                    Camera Access Needed
+                  </h3>
+                  <p className="text-xs opacity-75 mb-6 leading-relaxed">
+                    {errorMsg}
+                  </p>
+                  
+                  <div className="flex gap-3 items-center w-full">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setErrorMsg('');
+                        startScanning(selectedDeviceId);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full text-xs font-bold tracking-wide shadow-md bg-[var(--md-sys-color-primary,#6750A4)] hover:opacity-95 text-white active:scale-95 transition"
+                    >
+                      <Camera size={14} />
+                      <span>Retry</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsFullscreenScannerOpen(false)}
+                      className="flex-1 px-6 py-3 rounded-full text-xs font-bold tracking-wide border border-zinc-300 hover:bg-zinc-50 text-zinc-800 active:scale-95 transition"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
