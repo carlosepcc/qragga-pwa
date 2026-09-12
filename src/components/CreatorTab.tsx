@@ -6,7 +6,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import bwipjs from 'bwip-js';
 import { motion, AnimatePresence } from 'motion/react';
-import html2canvas from 'html2canvas';
+import { toPng, toJpeg } from 'html-to-image';
 import { BARCODE_DEFINITIONS } from '../data/barcodes';
 import { BarcodeType, HistoryItem } from '../types';
 import { 
@@ -306,6 +306,33 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
   const [cardBorder, setCardBorder] = useState<'none' | 'thin' | 'dashed'>('none');
   const [cardRounding, setCardRounding] = useState<'none' | 'medium' | 'large' | 'extra-large'>('large');
   const [showShadow, setShowShadow] = useState<boolean>(true);
+  const [barcodeDataUrl, setBarcodeDataUrl] = useState<string>('');
+
+  // Export styles and backgrounds
+  const [exportStyle, setExportStyle] = useState<'card-only' | 'social-mockup'>(() => {
+    const saved = localStorage.getItem('zebra_qr_draft_exportStyle');
+    return saved !== null ? (saved as any) : 'card-only';
+  });
+  const [mockupBg, setMockupBg] = useState<'indigo' | 'sunset' | 'nordic' | 'onyx'>(() => {
+    const saved = localStorage.getItem('zebra_qr_draft_mockupBg');
+    return saved !== null ? (saved as any) : 'indigo';
+  });
+
+  const getMockupBgStyle = () => {
+    if (mockupBg === 'indigo') {
+      return 'linear-gradient(135deg, #4F46E5 0%, #06B6D4 100%)';
+    }
+    if (mockupBg === 'sunset') {
+      return 'linear-gradient(135deg, #F43F5E 0%, #FB923C 100%)';
+    }
+    if (mockupBg === 'nordic') {
+      return 'linear-gradient(135deg, #F3F4F6 0%, #D1D5DB 100%)';
+    }
+    if (mockupBg === 'onyx') {
+      return 'linear-gradient(135deg, #111827 0%, #374151 100%)';
+    }
+    return 'linear-gradient(135deg, #4F46E5 0%, #06B6D4 100%)';
+  };
 
   // Auto-persist draft entries to localStorage
   useEffect(() => {
@@ -324,9 +351,11 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
     localStorage.setItem('zebra_qr_draft_customAvatarUrl', customAvatarUrl);
     localStorage.setItem('zebra_qr_draft_uploadedAvatarData', uploadedAvatarData);
     localStorage.setItem('zebra_qr_draft_showLogoInQrCenter', showLogoInQrCenter ? 'true' : 'false');
+    localStorage.setItem('zebra_qr_draft_exportStyle', exportStyle);
+    localStorage.setItem('zebra_qr_draft_mockupBg', mockupBg);
   }, [
     barcodeText, barcodeFormat, fgColor, bgColor, cardTitle, cardBody, cardFooter, bgType, cardBgColor, textColor,
-    avatarSource, customAvatarUrl, uploadedAvatarData, showLogoInQrCenter
+    avatarSource, customAvatarUrl, uploadedAvatarData, showLogoInQrCenter, exportStyle, mockupBg
   ]);
 
   // Export formats and Share status states
@@ -551,9 +580,28 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
             ctx.clip();
             ctx.drawImage(img, x, y, logoSize, logoSize);
             ctx.restore();
+
+            try {
+              setBarcodeDataUrl(canvas.toDataURL());
+            } catch (canvasErr) {
+              console.warn('Could not read canvas data URL due to security restrictions:', canvasErr);
+            }
+          };
+          img.onerror = () => {
+            try {
+              if (barcodeCanvasRef.current) {
+                setBarcodeDataUrl(barcodeCanvasRef.current.toDataURL());
+              }
+            } catch (canvasErr) {
+              console.warn('Could not read canvas data URL after load error:', canvasErr);
+            }
           };
           img.src = activeLogo;
+        } else {
+          setBarcodeDataUrl(barcodeCanvasRef.current.toDataURL());
         }
+      } else {
+        setBarcodeDataUrl(barcodeCanvasRef.current.toDataURL());
       }
 
     } catch (err: any) {
@@ -568,22 +616,35 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
 
     try {
       setIsExporting(true);
-      // Let React apply the squared, borderless snapshot layout state
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      // Let React apply the snapshot layout state
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
-      // Use html2canvas for flawless 1-1 pixel fidelity matching the screen exactly
-      const canvas = await html2canvas(cardPreviewRef.current, {
-        scale: 4, // 4x resolution for premium, high-DPI printed clarity
-        useCORS: true, // Bypass CORS blocks on favicons/images
-        allowTaint: true, // Prevent throwing on untainted secure resources
-        backgroundColor: bgType === 'solid' ? cardBgColor : bgType === 'minimal' ? '#FFFFFF' : null,
-        logging: false,
-      });
+      let dataUrl = '';
+      if (exportFormat === 'png') {
+        dataUrl = await toPng(cardPreviewRef.current, {
+          quality: 0.98,
+          pixelRatio: 3, // Premium, high-DPI printed clarity (3x resolution)
+          cacheBust: true,
+          skipFonts: true,
+          imagePlaceholder: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+          style: {
+            transform: 'scale(1)',
+          },
+        });
+      } else {
+        dataUrl = await toJpeg(cardPreviewRef.current, {
+          quality: 0.98,
+          pixelRatio: 3,
+          cacheBust: true,
+          skipFonts: true,
+          imagePlaceholder: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+          style: {
+            transform: 'scale(1)',
+          },
+        });
+      }
 
       setIsExporting(false);
-
-      const mimeType = exportFormat === 'jpeg' ? 'image/jpeg' : 'image/png';
-      const dataUrl = canvas.toDataURL(mimeType, exportFormat === 'jpeg' ? 0.98 : undefined);
 
       if (!dataUrl) {
         console.error('Failed to generate high-quality card data URL');
@@ -608,7 +669,7 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
       link.click();
     } catch (err) {
       setIsExporting(false);
-      console.error('Failed to render and export high-quality card:', err);
+      console.error('Failed to render and export high-quality card using html-to-image:', err);
     }
   };
 
@@ -619,22 +680,35 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
 
     try {
       setIsExporting(true);
-      // Let React apply the squared, borderless snapshot layout state
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      // Let React apply the layout state
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
-      // Use html2canvas for flawless 1-1 pixel fidelity matching the screen exactly
-      const canvas = await html2canvas(cardPreviewRef.current, {
-        scale: 3, // 3x is highly optimized and supported for messaging shares
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: bgType === 'solid' ? cardBgColor : bgType === 'minimal' ? '#FFFFFF' : null,
-        logging: false,
-      });
+      let dataUrl = '';
+      if (exportFormat === 'png') {
+        dataUrl = await toPng(cardPreviewRef.current, {
+          quality: 0.95,
+          pixelRatio: 2.5, // highly optimized and supported for messaging shares
+          cacheBust: true,
+          skipFonts: true,
+          imagePlaceholder: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+          style: {
+            transform: 'scale(1)',
+          },
+        });
+      } else {
+        dataUrl = await toJpeg(cardPreviewRef.current, {
+          quality: 0.95,
+          pixelRatio: 2.5,
+          cacheBust: true,
+          skipFonts: true,
+          imagePlaceholder: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+          style: {
+            transform: 'scale(1)',
+          },
+        });
+      }
 
       setIsExporting(false);
-
-      const mimeType = exportFormat === 'jpeg' ? 'image/jpeg' : 'image/png';
-      const dataUrl = canvas.toDataURL(mimeType, exportFormat === 'jpeg' ? 0.95 : undefined);
 
       if (!dataUrl) {
         setShareStatus('Failed to generate sharing image');
@@ -660,11 +734,11 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
           const byteArray = new Uint8Array(byteNumbers);
           byteArrays.push(byteArray);
         }
-        const blob = new Blob(byteArrays, { type: mimeType });
+        const blob = new Blob(byteArrays, { type: exportFormat === 'jpeg' ? 'image/jpeg' : 'image/png' });
 
         const fileExtension = exportFormat === 'jpeg' ? 'jpg' : 'png';
         const filename = `qragga-card-${Date.now()}.${fileExtension}`;
-        const file = new File([blob], filename, { type: mimeType });
+        const file = new File([blob], filename, { type: exportFormat === 'jpeg' ? 'image/jpeg' : 'image/png' });
 
         if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
           setShareStatus('Launching native share...');
@@ -681,7 +755,7 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
           setShareStatus('Copying HD card image to clipboard...');
           await navigator.clipboard.write([
             new ClipboardItem({
-              [mimeType]: blob,
+              [exportFormat === 'jpeg' ? 'image/jpeg' : 'image/png']: blob,
             }),
           ]);
           setShareStatus('HD Card Image copied to Clipboard!');
@@ -694,7 +768,7 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
       }
     } catch (err) {
       setIsExporting(false);
-      console.error('Error sharing card:', err);
+      console.error('Error sharing card using html-to-image:', err);
       setShareStatus('Sharing failed. Opening manual fallback...');
       setTimeout(() => setShareStatus(''), 3000);
     }
@@ -762,46 +836,104 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
     }
   }, [barcodeFormat]);
 
+  const renderCardContent = (isExportMode: boolean) => {
+    return (
+      <>
+        {/* Logo/Favicon Header if enabled */}
+        {showLogo && (
+          <div className="mb-2 mt-4 flex items-center justify-center select-none">
+            {getActiveLogoUrl() ? (
+              <div className="bg-white p-1 rounded-full border shadow-sm flex items-center justify-center w-14 h-14">
+                <img 
+                  src={getActiveLogoUrl()!} 
+                  alt="site logo" 
+                  crossOrigin="anonymous"
+                  referrerPolicy="no-referrer"
+                  className="w-12 h-12 object-contain rounded-full" 
+                />
+              </div>
+            ) : null}
+          </div>
+        )}
+
+        {/* Header Title - Auto-wrapping & responsive sizing */}
+        <h4 className="text-xl md:text-2xl font-extrabold text-center tracking-tight break-words w-full mt-2 select-none px-2 leading-tight">
+          {cardTitle || 'Card Title'}
+        </h4>
+
+        {/* Subtitle/Body - Auto-wrapping & line clamp */}
+        <p className="text-xs md:text-sm opacity-90 text-center mt-2 select-none max-w-xs leading-relaxed break-words line-clamp-3 px-3 w-full">
+          {cardBody || 'Card Body details'}
+        </p>
+
+        {/* Centered Barcode wrapper */}
+        <div className="flex-grow flex items-center justify-center my-6 w-full">
+          <div className="bg-white p-4 rounded-3xl shadow-md border"
+            style={{ borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)' }}
+          >
+            {barcodeDataUrl ? (
+              <img 
+                src={barcodeDataUrl} 
+                alt="Barcode" 
+                className="max-w-full max-h-[180px] object-contain block select-none pointer-events-none" 
+              />
+            ) : (
+              <div className="w-[180px] h-[80px] flex items-center justify-center text-xs opacity-50 font-sans">
+                Generating barcode...
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Displaying barcode value underneath conditionally */}
+        {showValue && (
+          <div className="text-center select-none w-full max-w-xs truncate mb-4 font-mono text-xs bg-black/10 dark:bg-white/10 px-3 py-1.5 rounded-lg opacity-85">
+            Value: {barcodeText}
+          </div>
+        )}
+
+        {/* Footer Note - rendered only when present */}
+        {cardFooter && (
+          <p className="text-xs md:text-sm opacity-80 text-center italic truncate w-full mb-3 select-none px-4">
+            {cardFooter}
+          </p>
+        )}
+      </>
+    );
+  };
+
   return (
     <div id="creator-container" className="w-full max-w-4xl mx-auto p-4 md:p-6 flex flex-col gap-6">
 
       {/* ONE COLUMN COMPACT FORM */}
       <div className="flex flex-col gap-6">
         
-        {/* Encoded Value / Text Content container outside and above the selection */}
-        <div className="p-6 rounded-3xl border flex flex-col gap-3"
-          style={{
-            backgroundColor: 'var(--md-sys-color-surface-container-low, #F7F2FA)',
-            borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
-          }}
-        >
-          <div className="flex items-center gap-2">
-            <QrCode size={18} className="text-[var(--md-sys-color-primary)]" />
-            <span className="text-xs font-bold uppercase tracking-wider text-[var(--md-sys-color-on-surface-variant)]">
-              Encoded Value / Text Content
-            </span>
+        {/* Encoded Value / Text Content - Visually borderless and simplified */}
+        <div className="flex flex-col gap-2.5">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-2">
+              <QrCode size={18} className="text-[var(--md-sys-color-primary)] opacity-80" />
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--md-sys-color-on-surface-variant)]">
+                Content for the {BARCODE_DEFINITIONS.find(d => d.id === barcodeFormat)?.name || 'Barcode'}
+              </span>
+            </div>
+            {errorMsg ? (
+              <span className="text-red-600 dark:text-red-400 font-semibold text-xs flex items-center gap-1 select-none">⚠️ Format Mismatch</span>
+            ) : (
+              <span className="text-green-600 dark:text-green-400 font-semibold text-xs flex items-center gap-1 select-none">✓ Ready to Scan</span>
+            )}
           </div>
           <textarea
             value={barcodeText}
             onChange={(e) => setBarcodeText(e.target.value)}
-            rows={3}
+            rows={4}
             placeholder={BARCODE_DEFINITIONS.find(d => d.id === barcodeFormat)?.placeholder}
-            className="w-full px-4 py-3 rounded-2xl border text-sm font-mono bg-white dark:bg-zinc-900 focus:ring-2 focus:ring-[var(--md-sys-color-primary)] outline-none resize-none"
+            className="w-full px-4 py-3.5 rounded-2xl border text-sm font-mono bg-white dark:bg-zinc-900 focus:ring-2 focus:ring-[var(--md-sys-color-primary)] outline-none resize-none transition-all duration-200"
             style={{
               color: 'var(--md-sys-color-on-surface, #1D1B20)',
               borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
             }}
           />
-          <div className="flex items-center justify-between text-[11px] opacity-75">
-            <span>
-              Active Standard: <strong className="text-[var(--md-sys-color-primary)]">{BARCODE_DEFINITIONS.find(d => d.id === barcodeFormat)?.name}</strong>
-            </span>
-            {errorMsg ? (
-              <span className="text-red-600 dark:text-red-400 font-medium flex items-center gap-1">⚠️ Format Mismatch</span>
-            ) : (
-              <span className="text-green-600 dark:text-green-400 font-medium flex items-center gap-1">✓ Ready to Scan</span>
-            )}
-          </div>
 
           {errorMsg && (
             <div className="p-3 text-xs text-red-700 bg-red-100 rounded-xl border border-red-200">
@@ -810,32 +942,16 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
           )}
         </div>
 
-        {/* Collapsible Advanced Settings & Barcode Standard container (collapsed by default) */}
-        <div className="rounded-3xl border overflow-hidden transition-all duration-300 shadow-xs"
-          style={{
-            borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
-          }}
-        >
-          {/* Collapsible Header toggle */}
+        {/* Collapsible Advanced Settings (collapsed by default) */}
+        <div className="w-full">
+          {/* Collapsible Header toggle as a basic details-like trigger */}
           <button
+            type="button"
             onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
-            className="w-full p-4 md:p-5 flex items-center justify-between bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-805 transition duration-300 outline-none"
+            className="w-full py-2.5 px-1 flex items-center justify-between text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors duration-200 outline-none font-medium text-sm cursor-pointer select-none"
           >
-            <div className="flex items-center gap-3">
-              <Settings size={18} className="text-[var(--md-sys-color-primary)]" />
-              <div className="text-left">
-                <h4 className="text-sm font-bold text-[var(--md-sys-color-on-surface)]">
-                  Advanced Settings & Barcode Standard
-                </h4>
-                <p className="text-[10px] opacity-70">
-                  Select standard barcode formats, adjust error correction levels, and customize colors
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1 text-[var(--md-sys-color-primary)] font-bold text-xs pr-1">
-              <span>{isAdvancedOpen ? 'Hide' : 'Customize'}</span>
-              {isAdvancedOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-            </div>
+            <span>Advanced</span>
+            {isAdvancedOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>
 
           {/* Expandable Advanced Content Area */}
@@ -1625,6 +1741,50 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
                         />
                       </div>
                     )}
+
+                    <div className="flex flex-col gap-3.5 pt-3 border-t border-dashed" style={{ borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)' }}>
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-xs font-semibold text-[var(--md-sys-color-on-surface)]">
+                          Export Canvas Layout
+                        </span>
+                        <div className="grid grid-cols-2 gap-2 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-xl">
+                          <button
+                            type="button"
+                            onClick={() => setExportStyle('card-only')}
+                            className={`py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${exportStyle === 'card-only' ? 'bg-white dark:bg-zinc-800 shadow-sm text-[var(--md-sys-color-primary)]' : 'opacity-70 text-zinc-600 dark:text-zinc-300'}`}
+                          >
+                            Card Only
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setExportStyle('social-mockup')}
+                            className={`py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${exportStyle === 'social-mockup' ? 'bg-white dark:bg-zinc-800 shadow-sm text-[var(--md-sys-color-primary)]' : 'opacity-70 text-zinc-600 dark:text-zinc-300'}`}
+                          >
+                            Social Mockup (1:1)
+                          </button>
+                        </div>
+                      </div>
+
+                      {exportStyle === 'social-mockup' && (
+                        <div className="flex flex-col gap-1.5 pt-1">
+                          <span className="text-[11px] font-semibold text-[var(--md-sys-color-on-surface-variant)]">
+                            Mockup Frame Theme
+                          </span>
+                          <div className="grid grid-cols-4 gap-1.5">
+                            {(['indigo', 'sunset', 'nordic', 'onyx'] as const).map((bg) => (
+                              <button
+                                key={bg}
+                                type="button"
+                                onClick={() => setMockupBg(bg)}
+                                className={`py-1.5 rounded-lg text-[10px] font-bold border capitalize transition-all cursor-pointer ${mockupBg === bg ? 'border-[var(--md-sys-color-primary)] bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)]' : 'border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+                              >
+                                {bg}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Dynamic Logo/Avatar Settings Configuration Panel */}
@@ -1766,9 +1926,13 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
                     ref={cardPreviewRef}
                     id="shareable-card-preview"
                     className={isExporting 
-                      ? `w-[480px] flex flex-col items-center p-8 relative overflow-visible rounded-none border-none shadow-none` 
+                      ? (exportStyle === 'social-mockup'
+                        ? `w-[640px] h-[640px] flex items-center justify-center p-12 relative overflow-hidden`
+                        : `w-[480px] flex flex-col items-center p-8 relative overflow-visible ${getRoundingClass()} ${getBorderClass()} shadow-none`)
                       : `w-full h-auto min-h-[480px] md:aspect-[4/5] flex flex-col items-center p-6 relative transition-all overflow-hidden ${getRoundingClass()} ${getBorderClass()} ${showShadow ? 'shadow-xl' : 'shadow-none'}`}
-                    style={{
+                    style={isExporting && exportStyle === 'social-mockup' ? {
+                      background: getMockupBgStyle(),
+                    } : {
                       background: bgType === 'solid' 
                         ? cardBgColor 
                         : bgType === 'gradient'
@@ -1785,69 +1949,29 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
                       color: bgType === 'minimal' ? 'var(--md-sys-color-on-surface, #1D1B20)' : textColor,
                     }}
                   >
-                    {/* Logo/Favicon Header if enabled */}
-                    {showLogo && (
-                      <div className="mb-2 mt-4 flex items-center justify-center select-none">
-                        {getActiveLogoUrl() ? (
-                          <div className="bg-white p-1 rounded-full border shadow-sm flex items-center justify-center w-14 h-14">
-                            <img 
-                              src={getActiveLogoUrl()!} 
-                              alt="site logo" 
-                              crossOrigin="anonymous"
-                              referrerPolicy="no-referrer"
-                              className="w-12 h-12 object-contain rounded-full" 
-                            />
-                          </div>
-                        ) : null}
-                      </div>
-                    )}
-
-                    {/* Header Title - Auto-wrapping & responsive sizing */}
-                    <h4 className="text-xl md:text-2xl font-extrabold text-center tracking-tight break-words w-full mt-2 select-none px-2 leading-tight">
-                      {cardTitle || 'Card Title'}
-                    </h4>
-
-                    {/* Subtitle/Body - Auto-wrapping & line clamp */}
-                    <p className="text-xs md:text-sm opacity-90 text-center mt-2 select-none max-w-xs leading-relaxed break-words line-clamp-3 px-3 w-full">
-                      {cardBody || 'Card Body details'}
-                    </p>
-
-                    {/* Centered Barcode wrapper */}
-                    <div className="flex-grow flex items-center justify-center my-6 w-full">
-                      <div className="bg-white p-4 rounded-3xl shadow-md border"
-                        style={{ borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)' }}
+                    {isExporting && exportStyle === 'social-mockup' ? (
+                      <div className={`w-[440px] flex flex-col items-center p-6 relative overflow-hidden shadow-[0_20px_40px_rgba(0,0,0,0.35)] ${getRoundingClass()} ${getBorderClass()}`}
+                        style={{
+                          background: bgType === 'solid' 
+                            ? cardBgColor 
+                            : bgType === 'gradient'
+                              ? `linear-gradient(180deg, ${gradientStart} 0%, ${gradientEnd} 100%)`
+                              : '#FFFFFF',
+                          borderColor: cardBorder === 'none'
+                            ? 'transparent'
+                            : bgType === 'minimal' 
+                              ? 'rgba(0,0,0,0.1)' 
+                              : cardBorder === 'dashed' 
+                                ? textColor + '40' 
+                                : textColor + '20',
+                          color: bgType === 'minimal' ? '#1D1B20' : textColor,
+                        }}
                       >
-                        {/* Canvas mirroring our code */}
-                        <canvas 
-                          className="max-w-full max-h-[180px] object-contain block select-none"
-                          ref={(el) => {
-                            // Copy drawn content from floating preview canvas to sheet copy
-                            if (el && barcodeCanvasRef.current) {
-                              const elCtx = el.getContext('2d');
-                              if (elCtx) {
-                                el.width = barcodeCanvasRef.current.width;
-                                  el.height = barcodeCanvasRef.current.height;
-                                  elCtx.drawImage(barcodeCanvasRef.current, 0, 0);
-                               }
-                             }
-                           }}
-                         />
-                       </div>
-                     </div>
- 
-                     {/* Displaying barcode value underneath conditionally */}
-                     {showValue && (
-                       <div className="text-center select-none w-full max-w-xs truncate mb-4 font-mono text-xs bg-black/10 dark:bg-white/10 px-3 py-1.5 rounded-lg opacity-85">
-                         Value: {barcodeText}
-                       </div>
-                     )}
- 
-                     {/* Footer Note - rendered only when present */}
-                     {cardFooter && (
-                       <p className="text-xs md:text-sm opacity-80 text-center italic truncate w-full mb-3 select-none px-4">
-                         {cardFooter}
-                       </p>
-                     )}
+                        {renderCardContent(true)}
+                      </div>
+                    ) : (
+                      renderCardContent(false)
+                    )}
                   </div>
 
                   {/* Actions Bar & Settings */}

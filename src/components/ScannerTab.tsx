@@ -20,6 +20,7 @@ import {
   Zap, 
   ZapOff,
   ChevronRight,
+  ChevronDown,
   Trash2,
   Star,
   Calendar,
@@ -53,6 +54,72 @@ function playBeep() {
     console.error('Audio beep failed:', err);
   }
 }
+
+// Helper to select the primary/best rear camera
+const selectBestCamera = (devices: MediaDeviceInfo[]): string => {
+  if (devices.length === 0) return '';
+  
+  // Filter out front/selfie/user cameras
+  const isBackCamera = (device: MediaDeviceInfo) => {
+    const label = (device.label || '').toLowerCase();
+    if (label.includes('front') || label.includes('selfie') || label.includes('inner') || label.includes('user')) {
+      return false;
+    }
+    if (label.includes('back') || label.includes('rear') || label.includes('environment') || label.includes('main') || label.includes('primary') || label.includes('outer')) {
+      return true;
+    }
+    if (label.includes('0') || label.includes('primary') || label.includes('main')) {
+      return true;
+    }
+    return false;
+  };
+
+  const backCams = devices.filter(isBackCamera);
+  const candidates = backCams.length > 0 ? backCams : devices;
+
+  // Score each candidate to find the most suitable primary rear camera
+  const scoreCamera = (device: MediaDeviceInfo) => {
+    const label = (device.label || '').toLowerCase();
+    let score = 0;
+
+    // Favor cameras explicitly labeled as main or primary, or camera 0
+    if (label.includes('main') || label.includes('primary')) {
+      score += 10;
+    }
+    if (label.includes('0')) {
+      score += 5;
+    }
+
+    // Deprioritize secondary lenses that are bad for scanning (macro, telephoto, ultra-wide)
+    if (label.includes('ultra') || label.includes('wide') || label.includes('tele') || label.includes('macro') || label.includes('zoom') || label.includes('depth') || label.includes('aux') || label.includes('virtual')) {
+      if (label.includes('ultra-wide') || label.includes('ultrawide')) {
+        score -= 20;
+      } else if (label.includes('tele') || label.includes('macro') || label.includes('zoom') || label.includes('depth') || label.includes('aux') || label.includes('virtual')) {
+        score -= 15;
+      } else if (label.includes('wide')) {
+        score -= 2; // "wide" alone can be good, but prefer a camera with "0" or "main"
+      } else {
+        score -= 10;
+      }
+    }
+
+    // Penalize higher index cameras (e.g. Camera 2, Camera 3)
+    const match = label.match(/camera\s*(\d+)/) || label.match(/(\d+)/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num === 0) {
+        score += 3;
+      } else if (num > 1) {
+        score -= num * 2;
+      }
+    }
+
+    return score;
+  };
+
+  const sorted = [...candidates].sort((a, b) => scoreCamera(b) - scoreCamera(a));
+  return sorted[0]?.deviceId || devices[0]?.deviceId || '';
+};
 
 interface ScannerTabProps {
   history: HistoryItem[];
@@ -116,8 +183,8 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
       .then((devices) => {
         setVideoDevices(devices);
         if (devices.length > 0) {
-          const backCam = devices.find(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('environment'));
-          setSelectedDeviceId(backCam ? backCam.deviceId : devices[0].deviceId);
+          const bestId = selectBestCamera(devices);
+          setSelectedDeviceId(bestId);
         }
       })
       .catch((err) => {
@@ -192,6 +259,26 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
       } catch (permErr: any) {
         console.warn('Explicit getUserMedia permission check failed:', permErr);
         throw permErr;
+      }
+
+      // Refresh the devices list since permission is now granted and labels are populated
+      if (codeReaderRef.current) {
+        try {
+          const devices = await codeReaderRef.current.listVideoInputDevices();
+          setVideoDevices(devices);
+          if (devices.length > 0) {
+            const bestId = selectBestCamera(devices);
+            const originalDevice = deviceId ? devices.find(d => d.deviceId === deviceId) : null;
+            // If the best ID is different from what we are currently scanning, AND we either didn't have a deviceId or the original device had an empty label
+            if (bestId && bestId !== deviceId && (!deviceId || !originalDevice || !originalDevice.label)) {
+              setSelectedDeviceId(bestId);
+              // Return early: the selectedDeviceId update will trigger useEffect to call startScanning with the correct bestId!
+              return;
+            }
+          }
+        } catch (deviceErr) {
+          console.error('Error refreshing video devices after permission:', deviceErr);
+        }
       }
       
       // Decode from device
@@ -612,12 +699,18 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
               {/* Left Side: Camera Selection Dropdown */}
               <div className="pointer-events-auto">
                 {videoDevices.length > 1 ? (
-                  <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-lg px-3.5 py-2 rounded-full border border-black/30 text-white">
-                    <Camera size={14} className="opacity-90" />
+                  <div className="relative flex items-center justify-center">
+                    {/* Visual Button: CameraIcon + ChevronDown */}
+                    <div className="flex items-center gap-1 bg-white/15 hover:bg-white/25 backdrop-blur-lg p-3 rounded-full border border-black/30 text-white transition active:scale-90">
+                      <Camera size={18} />
+                      <ChevronDown size={14} className="opacity-80" />
+                    </div>
+                    {/* Invisible Native Select layered exactly on top */}
                     <select
                       value={selectedDeviceId || ''}
                       onChange={(e) => setSelectedDeviceId(e.target.value)}
-                      className="bg-transparent text-white text-xs font-bold outline-none border-none pr-1.5 cursor-pointer"
+                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                      title="Select Camera"
                     >
                       {videoDevices.map((device, idx) => (
                         <option key={device.deviceId} value={device.deviceId} className="bg-zinc-950 text-white text-xs">
