@@ -25,7 +25,8 @@ import {
   Settings,
   QrCode,
   Move,
-  Share2
+  Share2,
+  Sparkles
 } from 'lucide-react';
 
 interface BarcodeThumbnailProps {
@@ -774,6 +775,72 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
     }
   };
 
+  // Direct Social / Native sharing of raw barcode with NO card whatsoever
+  const handleShareRawBarcode = async () => {
+    if (!barcodeCanvasRef.current) return;
+    setShareStatus('Generating barcode image...');
+
+    try {
+      const dataUrl = barcodeCanvasRef.current.toDataURL('image/png');
+
+      if (!dataUrl) {
+        setShareStatus('Failed to generate barcode image');
+        setTimeout(() => setShareStatus(''), 3000);
+        return;
+      }
+
+      // Automatically store in fallback state so if everything fails, they can view/press/hold it
+      setShareImageUrl(dataUrl);
+
+      // Attempt to convert to blob and perform Web Share or Clipboard Copy
+      try {
+        const parts = dataUrl.split(',');
+        const byteCharacters = atob(parts[1]);
+        const byteArrays = [];
+        for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+          const slice = byteCharacters.slice(offset, offset + 512);
+          const byteNumbers = new Array(slice.length);
+          for (let i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          byteArrays.push(byteArray);
+        }
+        const blob = new Blob(byteArrays, { type: 'image/png' });
+        const file = new File([blob], `barcode-${Date.now()}.png`, { type: 'image/png' });
+
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          setShareStatus('Launching native share...');
+          await navigator.share({
+            files: [file],
+            title: `Barcode (${barcodeFormat})`,
+            text: `Barcode for: ${barcodeText}`,
+          });
+          setShareStatus('');
+          setShareImageUrl(null);
+        } else {
+          // Attempt clipboard fallback
+          setShareStatus('Copying barcode image to clipboard...');
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              'image/png': blob,
+            }),
+          ]);
+          setShareStatus('Barcode image copied to Clipboard!');
+          setTimeout(() => setShareStatus(''), 4000);
+        }
+      } catch (innerErr) {
+        console.warn('Native share/clipboard failed inside direct share:', innerErr);
+        setShareStatus('Native share blocked. Opening manual share menu...');
+        setTimeout(() => setShareStatus(''), 3500);
+      }
+    } catch (err) {
+      console.error('Error sharing raw barcode:', err);
+      setShareStatus('Sharing failed. Opening manual fallback...');
+      setTimeout(() => setShareStatus(''), 3000);
+    }
+  };
+
   // Export raw Barcode SVG to user
   const handleExportSvg = () => {
     if (!barcodeText.trim() || errorMsg) return;
@@ -904,6 +971,43 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
 
   return (
     <div id="creator-container" className="w-full max-w-4xl mx-auto p-4 md:p-6 flex flex-col gap-6">
+
+      {/* STICKY ROW: LIVE BARCODE PREVIEW & QUICK ACTIONS */}
+      <div className="sticky top-0 z-30 bg-zinc-50/90 dark:bg-zinc-900/90 backdrop-blur-md py-0 border-b border-zinc-200 dark:border-zinc-800 -mx-4 px-4 sm:-mx-6 sm:px-6 flex items-center justify-between transition-all duration-200">
+        {/* Code Preview (the barcode canvas itself) - Square, No Padding, Maximum vertical space */}
+        <div className="flex items-center min-w-0">
+          <div className="bg-white p-0 rounded-none border-r border-zinc-200 dark:border-zinc-800 h-28 sm:h-32 w-32 sm:w-36 flex items-center justify-center overflow-hidden select-none flex-shrink-0">
+            <canvas ref={barcodeCanvasRef} className="max-w-full max-h-full object-contain block pointer-events-none" />
+          </div>
+        </div>
+
+        {/* Action buttons on the right side - Stacked in a column */}
+        <div className="flex flex-col gap-1.5 py-2 flex-shrink-0 items-end">
+          {shareStatus && (
+            <span className="text-[10px] font-semibold text-[var(--md-sys-color-primary)] bg-purple-50 dark:bg-purple-950/40 px-2 py-0.5 rounded border border-purple-100 dark:border-purple-900/40">
+              {shareStatus}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleShareRawBarcode}
+            disabled={!barcodeText.trim() || !!errorMsg}
+            className="flex items-center justify-center gap-1.5 w-28 sm:w-32 py-1.5 rounded text-xs font-bold bg-[var(--md-sys-color-primary)] text-white hover:opacity-90 active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition-all duration-200 shadow-sm cursor-pointer select-none"
+          >
+            <Share2 size={12} />
+            <span>Share Code</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsBottomSheetOpen(true)}
+            disabled={!barcodeText.trim() || !!errorMsg}
+            className="flex items-center justify-center gap-1.5 w-28 sm:w-32 py-1.5 rounded bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-750 active:scale-95 disabled:opacity-45 disabled:pointer-events-none transition-all duration-200 border border-zinc-200 dark:border-zinc-700 cursor-pointer select-none font-bold"
+          >
+            <Sliders size={12} className="text-zinc-500 dark:text-zinc-400" />
+            <span>Customize</span>
+          </button>
+        </div>
+      </div>
 
       {/* ONE COLUMN COMPACT FORM */}
       <div className="flex flex-col gap-6">
@@ -1315,24 +1419,6 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
         </div>
 
       </div>
-
-      {/* 4. NON-OBTRUSIVE FLOATING PREVIEW WINDOW (BOTTOM-LEFT, DRAGGABLE) */}
-      <motion.div
-        drag
-        dragMomentum={false}
-        whileDrag={{ scale: 1.05 }}
-        className="fixed bottom-24 md:bottom-8 left-4 md:left-8 z-40 p-4 bg-white dark:bg-zinc-800 rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-700 cursor-grab active:cursor-grabbing w-36 h-36 flex items-center justify-center group"
-        onClick={() => setIsBottomSheetOpen(true)}
-        title="Touch to open Shareable Card Builder & Exports"
-      >
-        <canvas ref={barcodeCanvasRef} className="max-w-full max-h-full object-contain block select-none pointer-events-none" />
-        
-        {/* Hover Hint Tab */}
-        <div className="absolute inset-x-0 bottom-0 bg-black/60 text-[9px] text-white py-1 text-center rounded-b-3xl opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-1">
-          <ChevronUp size={10} />
-          <span>Card Builder</span>
-        </div>
-      </motion.div>
 
       {/* 5. INTERACTIVE BOTTOM SHEET FOR CARD BUILDING & EXPORTS */}
       <AnimatePresence>
