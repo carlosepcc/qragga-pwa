@@ -1032,7 +1032,7 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
             onChange={(e) => setBarcodeText(e.target.value)}
             rows={4}
             placeholder={BARCODE_DEFINITIONS.find(d => d.id === barcodeFormat)?.placeholder}
-            className="w-full px-4 py-3.5 rounded-2xl border text-sm font-mono bg-white dark:bg-zinc-900 focus:ring-2 focus:ring-[var(--md-sys-color-primary)] outline-none resize-none transition-all duration-200"
+            className="w-full px-4 py-3.5 rounded-none border text-sm font-mono bg-white dark:bg-zinc-900 focus:ring-2 focus:ring-[var(--md-sys-color-primary)] outline-none resize-none transition-all duration-200"
             style={{
               color: 'var(--md-sys-color-on-surface, #1D1B20)',
               borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
@@ -1040,7 +1040,7 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
           />
 
           {errorMsg && (
-            <div className="p-3 text-xs text-red-700 bg-red-100 rounded-xl border border-red-200">
+            <div className="p-3 text-xs text-red-700 bg-red-100 rounded-none border border-red-200">
               {errorMsg}
             </div>
           )}
@@ -1086,17 +1086,17 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
                       </div>
 
                       {/* Mode selection toggle */}
-                      <div className="flex bg-black/5 dark:bg-white/5 p-1 rounded-xl">
+                      <div className="flex bg-black/5 dark:bg-white/5 p-1 rounded-none border border-zinc-200 dark:border-zinc-800">
                         <button
                           onClick={() => setSelectionMode('grid')}
-                          className={`p-1.5 rounded-lg transition ${selectionMode === 'grid' ? 'bg-white dark:bg-zinc-800 shadow-sm text-[var(--md-sys-color-primary)]' : 'opacity-60 text-[var(--md-sys-color-on-background)]'}`}
+                          className={`p-1.5 rounded-none transition ${selectionMode === 'grid' ? 'bg-white dark:bg-zinc-800 shadow-sm text-[var(--md-sys-color-primary)]' : 'opacity-60 text-[var(--md-sys-color-on-background)]'}`}
                           title="Grid view"
                         >
                           <Grid size={14} />
                         </button>
                         <button
                           onClick={() => setSelectionMode('dropdown')}
-                          className={`p-1.5 rounded-lg transition ${selectionMode === 'dropdown' ? 'bg-white dark:bg-zinc-800 shadow-sm text-[var(--md-sys-color-primary)]' : 'opacity-60 text-[var(--md-sys-color-on-background)]'}`}
+                          className={`p-1.5 rounded-none transition ${selectionMode === 'dropdown' ? 'bg-white dark:bg-zinc-800 shadow-sm text-[var(--md-sys-color-primary)]' : 'opacity-60 text-[var(--md-sys-color-on-background)]'}`}
                           title="Dropdown view"
                         >
                           <List size={14} />
@@ -1588,11 +1588,11 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
                       value={cardFooter}
                       onChange={(e) => setCardFooter(e.target.value)}
                       placeholder="Card footer text"
-                      className="w-full px-3 py-2 rounded-xl border text-xs bg-white dark:bg-zinc-900 focus:ring-1 focus:ring-[var(--md-sys-color-primary)] outline-none"
+                      className="w-full px-3 py-2 rounded-none border text-xs bg-white dark:bg-zinc-900 focus:ring-1 focus:ring-[var(--md-sys-color-primary)] outline-none"
                       style={{ borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)' }}
                     />
                     {urlData.isValid && urlData.footer && cardFooter !== urlData.footer && (
-                      <div className="mt-1.5 flex items-center justify-between text-[10px] bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 px-2.5 py-1 rounded-lg border border-purple-150 dark:border-purple-900/50">
+                      <div className="mt-1.5 flex items-center justify-between text-[10px] bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 px-2.5 py-1 rounded-none border border-purple-150 dark:border-purple-900/50">
                         <span className="truncate mr-1.5">Suggested: <strong>{urlData.footer}</strong></span>
                         <button 
                           type="button" 
@@ -1615,19 +1615,19 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
                       <div className="flex gap-2">
                         <button
                           onClick={() => { setBgType('gradient'); setTextColor('#FFFFFF'); }}
-                          className={`flex-grow py-1.5 rounded-xl text-xs font-semibold border ${bgType === 'gradient' ? 'bg-[var(--md-sys-color-primary-container)] border-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary-container)]' : 'bg-white dark:bg-zinc-900'}`}
+                          className={`flex-grow py-1.5 rounded-none text-xs font-semibold border ${bgType === 'gradient' ? 'bg-[var(--md-sys-color-primary-container)] border-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary-container)]' : 'bg-white dark:bg-zinc-900'}`}
                         >
                           Gradient
                         </button>
                         <button
                           onClick={() => { setBgType('solid'); setTextColor('#1D1B20'); }}
-                          className={`flex-grow py-1.5 rounded-xl text-xs font-semibold border ${bgType === 'solid' ? 'bg-[var(--md-sys-color-primary-container)] border-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary-container)]' : 'bg-white dark:bg-zinc-900'}`}
+                          className={`flex-grow py-1.5 rounded-none text-xs font-semibold border ${bgType === 'solid' ? 'bg-[var(--md-sys-color-primary-container)] border-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary-container)]' : 'bg-white dark:bg-zinc-900'}`}
                         >
                           Solid Color
                         </button>
                         <button
                           onClick={() => { setBgType('minimal'); setTextColor('#1D1B20'); }}
-                          className={`flex-grow py-1.5 rounded-xl text-xs font-semibold border ${bgType === 'minimal' ? 'bg-[var(--md-sys-color-primary-container)] border-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary-container)]' : 'bg-white dark:bg-zinc-900'}`}
+                          className={`flex-grow py-1.5 rounded-none text-xs font-semibold border ${bgType === 'minimal' ? 'bg-[var(--md-sys-color-primary-container)] border-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary-container)]' : 'bg-white dark:bg-zinc-900'}`}
                         >
                           Minimal
                         </button>
@@ -1641,13 +1641,13 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
                       <div className="flex gap-2">
                         <button
                           onClick={() => setTextColor('#FFFFFF')}
-                          className={`flex-grow py-1.5 rounded-xl text-xs font-semibold border bg-zinc-800 text-white ${textColor === '#FFFFFF' ? 'ring-2 ring-[var(--md-sys-color-primary)]' : ''}`}
+                          className={`flex-grow py-1.5 rounded-none text-xs font-semibold border bg-zinc-800 text-white ${textColor === '#FFFFFF' ? 'ring-2 ring-[var(--md-sys-color-primary)]' : ''}`}
                         >
                           White
                         </button>
                         <button
                           onClick={() => setTextColor('#1D1B20')}
-                          className={`flex-grow py-1.5 rounded-xl text-xs font-semibold border bg-white text-zinc-900 ${textColor === '#1D1B20' ? 'ring-2 ring-[var(--md-sys-color-primary)]' : ''}`}
+                          className={`flex-grow py-1.5 rounded-none text-xs font-semibold border bg-white text-zinc-900 ${textColor === '#1D1B20' ? 'ring-2 ring-[var(--md-sys-color-primary)]' : ''}`}
                         >
                           Ink Black
                         </button>
@@ -1667,14 +1667,14 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
                           type="color"
                           value={cardBgColor}
                           onChange={(e) => setCardBgColor(e.target.value)}
-                          className="w-10 h-10 rounded-xl cursor-pointer"
+                          className="w-10 h-10 rounded-none cursor-pointer border border-zinc-300"
                         />
                         <div className="flex gap-1.5 overflow-x-auto pb-1">
                           {['#F7F2FA', '#EADDFF', '#ECE6F0', '#FFE2E2', '#E2F0D9', '#D9E1F2', '#FFF2CC'].map(c => (
                             <button
                               key={c}
                               onClick={() => setCardBgColor(c)}
-                              className="w-6 h-6 rounded-full border shadow-sm flex-shrink-0"
+                              className="w-6 h-6 rounded-none border shadow-sm flex-shrink-0"
                               style={{ backgroundColor: c }}
                             />
                           ))}
@@ -2064,7 +2064,7 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
                   <div className="flex flex-col gap-4">
                     
                     {/* Format & Share Panel */}
-                    <div className="flex flex-col gap-3.5 bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-3xl border"
+                    <div className="flex flex-col gap-3.5 bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-none border"
                       style={{ borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)' }}
                     >
                       <div className="flex items-center justify-between">
@@ -2072,16 +2072,16 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
                           📦 Output Settings
                         </span>
                         {/* Format toggle tabs */}
-                        <div className="flex bg-zinc-200/60 dark:bg-zinc-800 rounded-lg p-0.5 text-[10px] font-bold">
+                        <div className="flex bg-zinc-200/60 dark:bg-zinc-800 rounded-none p-0.5 text-[10px] font-bold border border-zinc-300 dark:border-zinc-700">
                           <button
                             onClick={() => setExportFormat('png')}
-                            className={`px-3 py-1 rounded-md transition cursor-pointer ${exportFormat === 'png' ? 'bg-white dark:bg-zinc-700 shadow-sm text-black dark:text-white' : 'opacity-60 text-zinc-700 dark:text-zinc-400'}`}
+                            className={`px-3 py-1 rounded-none transition cursor-pointer ${exportFormat === 'png' ? 'bg-white dark:bg-zinc-700 shadow-sm text-black dark:text-white' : 'opacity-60 text-zinc-700 dark:text-zinc-400'}`}
                           >
                             PNG
                           </button>
                           <button
                             onClick={() => setExportFormat('jpeg')}
-                            className={`px-3 py-1 rounded-md transition cursor-pointer ${exportFormat === 'jpeg' ? 'bg-white dark:bg-zinc-700 shadow-sm text-black dark:text-white' : 'opacity-60 text-zinc-700 dark:text-zinc-400'}`}
+                            className={`px-3 py-1 rounded-none transition cursor-pointer ${exportFormat === 'jpeg' ? 'bg-white dark:bg-zinc-700 shadow-sm text-black dark:text-white' : 'opacity-60 text-zinc-700 dark:text-zinc-400'}`}
                           >
                             JPEG
                           </button>
@@ -2093,7 +2093,7 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
                         <motion.div 
                           initial={{ opacity: 0, y: -4 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="text-xs font-semibold text-center py-1 px-3 bg-purple-50 dark:bg-purple-950/40 text-[var(--md-sys-color-primary)] rounded-xl border border-purple-100 dark:border-purple-900/50"
+                          className="text-xs font-semibold text-center py-1 px-3 bg-purple-50 dark:bg-purple-950/40 text-[var(--md-sys-color-primary)] rounded-none border border-purple-100 dark:border-purple-900/50"
                         >
                           {shareStatus}
                         </motion.div>
@@ -2104,7 +2104,7 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
                         <button
                           onClick={handleExportCard}
                           disabled={!barcodeText.trim() || !!errorMsg}
-                          className="flex items-center justify-center gap-2 w-full py-3 rounded-full text-xs font-semibold text-white bg-[var(--md-sys-color-primary)] hover:opacity-90 active:scale-95 transition shadow-sm disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+                          className="flex items-center justify-center gap-2 w-full py-3 rounded-none text-xs font-semibold text-white bg-[var(--md-sys-color-primary)] hover:opacity-90 active:scale-95 transition shadow-sm disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
                         >
                           <Download size={15} />
                           <span>Download Card</span>
@@ -2114,7 +2114,7 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
                         <button
                           onClick={handleDirectShare}
                           disabled={!barcodeText.trim() || !!errorMsg}
-                          className="flex items-center justify-center gap-2 w-full py-3 rounded-full text-xs font-semibold border hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition shadow-sm disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+                          className="flex items-center justify-center gap-2 w-full py-3 rounded-none text-xs font-semibold border hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition shadow-sm disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
                           style={{
                             color: 'var(--md-sys-color-primary, #6750A4)',
                             borderColor: 'var(--md-sys-color-primary, #6750A4)',
@@ -2131,7 +2131,7 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
                       <button
                         onClick={handleExportSvg}
                         disabled={!barcodeText.trim() || !!errorMsg}
-                        className="flex-grow flex items-center justify-center gap-2 py-2.5 rounded-full text-xs font-semibold border hover:bg-black/5 dark:hover:bg-white/5 transition active:scale-95 disabled:opacity-45 cursor-pointer"
+                        className="flex-grow flex items-center justify-center gap-2 py-2.5 rounded-none text-xs font-semibold border hover:bg-black/5 dark:hover:bg-white/5 transition active:scale-95 disabled:opacity-45 cursor-pointer"
                         style={{
                           color: 'var(--md-sys-color-primary, #6750A4)',
                           borderColor: 'var(--md-sys-color-primary, #6750A4)',
@@ -2146,7 +2146,7 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
                           navigator.clipboard.writeText(barcodeText);
                         }}
                         disabled={!barcodeText.trim()}
-                        className="flex-grow flex items-center justify-center gap-2 py-2.5 rounded-full text-xs font-semibold border hover:bg-black/5 dark:hover:bg-white/5 transition active:scale-95 disabled:opacity-45 cursor-pointer"
+                        className="flex-grow flex items-center justify-center gap-2 py-2.5 rounded-none text-xs font-semibold border hover:bg-black/5 dark:hover:bg-white/5 transition active:scale-95 disabled:opacity-45 cursor-pointer"
                         style={{
                           color: 'var(--md-sys-color-secondary, #625B71)',
                           borderColor: 'var(--md-sys-color-secondary, #625B71)',
@@ -2179,7 +2179,7 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 280 }}
-              className="w-full max-w-sm flex flex-col p-6 rounded-[28px] shadow-2xl relative"
+              className="w-full max-w-sm flex flex-col p-6 rounded-none shadow-2xl relative"
               style={{
                 backgroundColor: 'var(--md-sys-color-surface-container-high, #F3EDF7)',
                 color: 'var(--md-sys-color-on-surface, #1D1B20)',
@@ -2189,7 +2189,7 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
             >
               {/* Header Info */}
               <div className="flex flex-col items-center text-center gap-1.5 pb-4 border-b border-black/10 dark:border-white/10">
-                <div className="w-10 h-10 rounded-full bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-none border border-zinc-300 dark:border-zinc-700 bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)] flex items-center justify-center">
                   <Share2 size={20} />
                 </div>
                 <h3 className="text-base font-bold tracking-tight mt-1">Manual Share Menu</h3>
@@ -2204,11 +2204,11 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
               </div>
 
               {/* High-res Image display for touch/right-click actions */}
-              <div className="flex justify-center py-5 bg-black/5 dark:bg-white/5 rounded-2xl my-4 overflow-hidden max-h-[360px]">
+              <div className="flex justify-center py-5 bg-black/5 dark:bg-white/5 rounded-none my-4 overflow-hidden max-h-[360px]">
                 <img 
                   src={shareImageUrl} 
                   alt="QRagga Share Card" 
-                  className="max-h-[320px] object-contain rounded-lg shadow-md hover:scale-105 transition duration-300 pointer-events-auto"
+                  className="max-h-[320px] object-contain rounded-none shadow-md hover:scale-105 transition duration-300 pointer-events-auto"
                   referrerPolicy="no-referrer"
                   style={{ userSelect: 'auto', WebkitUserSelect: 'auto' }}
                 />
@@ -2217,7 +2217,7 @@ export const CreatorTab: React.FC<CreatorTabProps> = ({
               {/* Close Footer Button */}
               <button
                 onClick={() => setShareImageUrl(null)}
-                className="w-full py-3 rounded-full text-xs font-bold tracking-wide hover:opacity-90 transition active:scale-95"
+                className="w-full py-3 rounded-none text-xs font-bold tracking-wide hover:opacity-90 transition active:scale-95"
                 style={{
                   backgroundColor: 'var(--md-sys-color-primary, #6750A4)',
                   color: 'var(--md-sys-color-on-primary, #FFFFFF)',

@@ -130,7 +130,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
           <button
             onClick={handleExportBackup}
             disabled={history.length === 0}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold border hover:bg-black/5 dark:hover:bg-white/5 transition disabled:opacity-40 cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-none text-xs font-semibold border hover:bg-black/5 dark:hover:bg-white/5 transition disabled:opacity-40 cursor-pointer"
             style={{
               color: 'var(--md-sys-color-primary, #6750A4)',
               borderColor: 'var(--md-sys-color-primary, #6750A4)',
@@ -140,7 +140,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
             <span>Backup Export</span>
           </button>
 
-          <label className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold border hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition"
+          <label className="flex items-center gap-1.5 px-4 py-2 rounded-none text-xs font-semibold border hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition"
             style={{
               color: 'var(--md-sys-color-secondary, #625B71)',
               borderColor: 'var(--md-sys-color-secondary, #625B71)',
@@ -164,7 +164,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
         <div className="lg:col-span-8 flex flex-col gap-4">
           
           {/* Filtering Card */}
-          <div className="p-4 rounded-3xl border flex flex-col md:flex-row md:items-center justify-between gap-4"
+          <div className="p-4 rounded-none border flex flex-col md:flex-row md:items-center justify-between gap-4"
             style={{
               backgroundColor: 'var(--md-sys-color-surface-container-low, #F7F2FA)',
               borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
@@ -178,7 +178,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                 placeholder="Search value or label..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 rounded-2xl text-xs bg-white dark:bg-zinc-900 border outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)]"
+                className="w-full pl-9 pr-4 py-2 rounded-none text-xs bg-white dark:bg-zinc-900 border outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)]"
                 style={{
                   borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
                   color: 'var(--md-sys-color-on-surface, #1D1B20)',
@@ -192,7 +192,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                 <button
                   key={t}
                   onClick={() => setFilterType(t as any)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize border transition-all ${filterType === t ? 'bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)] border-[var(--md-sys-color-primary)]' : 'bg-white text-zinc-600 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:border-zinc-700'}`}
+                  className={`px-3 py-1.5 rounded-none text-xs font-semibold capitalize border transition-all ${filterType === t ? 'bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)] border-[var(--md-sys-color-primary)]' : 'bg-white text-zinc-600 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:border-zinc-700'}`}
                 >
                   {t}
                 </button>
@@ -203,7 +203,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value as any)}
-              className="px-3 py-2 rounded-2xl text-xs bg-white dark:bg-zinc-900 border font-medium outline-none"
+              className="px-3 py-2 rounded-none text-xs bg-white dark:bg-zinc-900 border font-medium outline-none"
               style={{
                 borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
                 color: 'var(--md-sys-color-on-surface, #1D1B20)',
@@ -221,7 +221,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
               filteredHistory.map((item) => (
                 <div
                   key={item.id}
-                  className={`p-4 rounded-3xl border flex items-center justify-between gap-4 cursor-pointer hover:shadow-md transition-all duration-300 ${selectedItem?.id === item.id ? 'ring-2 ring-[var(--md-sys-color-primary)]' : ''}`}
+                  className={`p-4 rounded-none border flex items-center justify-between gap-4 cursor-pointer hover:shadow-md transition-all duration-300 ${selectedItem?.id === item.id ? 'ring-2 ring-[var(--md-sys-color-primary)]' : ''}`}
                   style={{
                     backgroundColor: 'var(--md-sys-color-surface-container-lowest, #FFFFFF)',
                     borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
@@ -230,7 +230,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
                     {/* Color Tag indicating Scanned vs Created */}
-                    <div className="w-1.5 h-12 rounded-full flex-shrink-0"
+                    <div className="w-1.5 h-12 rounded-none flex-shrink-0"
                       style={{
                         backgroundColor: item.type === 'scanned' 
                           ? 'var(--md-sys-color-tertiary, #7D5260)' 
@@ -243,10 +243,11 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                         <span className="text-xs font-bold text-[var(--md-sys-color-primary)]">
                           {getFormatName(item.format)}
                         </span>
-                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
+                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-none border"
                           style={{
                             backgroundColor: item.type === 'scanned' ? '#FFE3EC' : '#E8DEF8',
                             color: item.type === 'scanned' ? '#31111D' : '#21005D',
+                            borderColor: item.type === 'scanned' ? '#FDA4AF' : '#D8B4FE',
                           }}
                         >
                           {item.type}
@@ -273,7 +274,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                   <div className="flex items-center gap-1.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={() => onToggleFavorite(item.id)}
-                      className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition"
+                      className="p-2 rounded-none hover:bg-black/5 dark:hover:bg-white/5 transition"
                       style={{
                         color: item.isFavorite ? '#E0A800' : 'var(--md-sys-color-outline, #79747E)'
                       }}
@@ -283,7 +284,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
 
                     <button
                       onClick={() => onDeleteItem(item.id)}
-                      className="p-2 rounded-full hover:bg-red-50 text-red-500 hover:text-red-700 transition"
+                      className="p-2 rounded-none hover:bg-red-50 text-red-500 hover:text-red-700 transition"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -291,7 +292,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                 </div>
               ))
             ) : (
-              <div className="flex flex-col items-center justify-center p-12 text-center rounded-3xl border border-dashed border-zinc-300">
+              <div className="flex flex-col items-center justify-center p-12 text-center rounded-none border border-dashed border-zinc-300">
                 <p className="text-sm opacity-60 text-[var(--md-sys-color-on-background)]">
                   No matching records found.
                 </p>
@@ -317,13 +318,13 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                       setShowConfirmClear(false);
                       setSelectedItem(null);
                     }}
-                    className="px-3 py-1 rounded-full text-xs font-bold bg-red-600 text-white shadow hover:bg-red-700 transition"
+                    className="px-3 py-1 rounded-none text-xs font-bold bg-red-600 text-white shadow hover:bg-red-700 transition"
                   >
                     Yes, Clear All
                   </button>
                   <button
                     onClick={() => setShowConfirmClear(false)}
-                    className="px-3 py-1 rounded-full text-xs font-semibold border hover:bg-zinc-50"
+                    className="px-3 py-1 rounded-none text-xs font-semibold border hover:bg-zinc-50"
                   >
                     Cancel
                   </button>
@@ -331,7 +332,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
               ) : (
                 <button
                   onClick={() => setShowConfirmClear(true)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold text-red-600 hover:bg-red-50 transition"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-none text-xs font-bold text-red-600 hover:bg-red-50 transition"
                 >
                   <Trash2 size={13} />
                   <span>Purge Offline DB</span>
@@ -344,7 +345,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
 
         {/* RIGHT COLUMN: RECORD DETAIL RECALL BOARD (4 cols) */}
         <div className="lg:col-span-4 lg:sticky lg:top-6">
-          <div className="p-6 rounded-3xl border flex flex-col gap-4 shadow-sm"
+          <div className="p-6 rounded-none border flex flex-col gap-4 shadow-sm"
             style={{
               backgroundColor: 'var(--md-sys-color-surface-container-low, #F7F2FA)',
               borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
@@ -372,7 +373,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                     <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--md-sys-color-on-surface-variant)]">
                       Decoded String Content
                     </span>
-                    <div className="bg-white dark:bg-zinc-900 border p-3 rounded-xl font-mono text-xs break-all max-h-36 overflow-y-auto">
+                    <div className="bg-white dark:bg-zinc-900 border p-3 rounded-none font-mono text-xs break-all max-h-36 overflow-y-auto">
                       {selectedItem.value}
                     </div>
                   </div>
@@ -392,7 +393,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                   
                   <button
                     onClick={() => handleCopy(selectedItem.value, selectedItem.id)}
-                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-full text-xs font-semibold border hover:bg-black/5 dark:hover:bg-white/5 transition"
+                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-none text-xs font-semibold border hover:bg-black/5 dark:hover:bg-white/5 transition"
                     style={{
                       color: 'var(--md-sys-color-primary, #6750A4)',
                       borderColor: 'var(--md-sys-color-primary, #6750A4)',
@@ -416,7 +417,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                       href={selectedItem.value}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-2.5 rounded-full text-xs font-semibold text-white text-center hover:opacity-90 shadow-sm transition"
+                      className="flex items-center justify-center gap-2 w-full py-2.5 rounded-none text-xs font-semibold text-white text-center hover:opacity-90 shadow-sm transition"
                       style={{
                         backgroundColor: 'var(--md-sys-color-secondary, #625B71)',
                       }}
@@ -428,7 +429,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
 
                   <button
                     onClick={() => onSelectRecall(selectedItem.value, selectedItem.format)}
-                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-full text-xs font-semibold text-white hover:opacity-90 transition shadow-md"
+                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-none text-xs font-semibold text-white hover:opacity-90 transition shadow-md"
                     style={{
                       backgroundColor: 'var(--md-sys-color-primary, #6750A4)',
                     }}

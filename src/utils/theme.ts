@@ -80,75 +80,92 @@ export function hslToHex(h: number, s: number, l: number): string {
 export function generateMaterialPalette(sourceHex: string, isDark: boolean): MaterialPalette {
   const { h, s, l } = hexToHsl(sourceHex);
 
-  // M3 Hue Shifts
-  const hPrimary = h;
-  const sPrimary = Math.max(s, 40); // Maintain decent saturation for brand colors
-  
-  const hSecondary = h;
-  const sSecondary = Math.max(Math.round(s * 0.35), 8); // Muted palette
-  
-  const hTertiary = (h + 60) % 360; // Shift hue for interest
-  const sTertiary = Math.max(Math.round(s * 0.5), 16);
+  // Restrict saturation to a premium, nearly monochrome gray (3% to 6%)
+  const monoS = Math.min(s, 5); 
 
   if (!isDark) {
+    // Light Mode (Sophisticated Warm/Cool Off-Whites)
+    const bg = hslToHex(h, monoS, 98); // #FAF9F8 style off-white
+    const surface = '#FFFFFF';
+    const primary = hslToHex(h, monoS, 10); // Very dark almost black
+    const onPrimary = '#FFFFFF';
+    const primaryContainer = hslToHex(h, monoS, 92); // Clean light gray
+    const onPrimaryContainer = primary;
+    const secondary = hslToHex(h, monoS, 25); // Mid-dark gray
+    const onSecondary = '#FFFFFF';
+    const secondaryContainer = hslToHex(h, monoS, 94);
+    const onSecondaryContainer = secondary;
+    
     return {
-      primary: hslToHex(hPrimary, sPrimary, 40),
-      onPrimary: '#FFFFFF',
-      primaryContainer: hslToHex(hPrimary, sPrimary, 90),
-      onPrimaryContainer: hslToHex(hPrimary, sPrimary, 10),
-      secondary: hslToHex(hSecondary, sSecondary, 40),
-      onSecondary: '#FFFFFF',
-      secondaryContainer: hslToHex(hSecondary, sSecondary, 90),
-      onSecondaryContainer: hslToHex(hSecondary, sSecondary, 10),
-      tertiary: hslToHex(hTertiary, sTertiary, 40),
+      primary,
+      onPrimary,
+      primaryContainer,
+      onPrimaryContainer,
+      secondary,
+      onSecondary,
+      secondaryContainer,
+      onSecondaryContainer,
+      tertiary: secondary,
       onTertiary: '#FFFFFF',
-      tertiaryContainer: hslToHex(hTertiary, sTertiary, 90),
-      onTertiaryContainer: hslToHex(hTertiary, sTertiary, 10),
-      surface: hslToHex(hPrimary, 6, 98),
-      onSurface: hslToHex(hPrimary, 12, 10),
-      surfaceVariant: hslToHex(hPrimary, 8, 90),
-      onSurfaceVariant: hslToHex(hPrimary, 12, 30),
+      tertiaryContainer: secondaryContainer,
+      onTertiaryContainer: secondary,
+      surface,
+      onSurface: primary,
+      surfaceVariant: hslToHex(h, monoS, 90),
+      onSurfaceVariant: hslToHex(h, monoS, 30),
       surfaceContainerLowest: '#FFFFFF',
-      surfaceContainerLow: hslToHex(hPrimary, 6, 96),
-      surfaceContainer: hslToHex(hPrimary, 6, 94),
-      surfaceContainerHigh: hslToHex(hPrimary, 6, 92),
-      surfaceContainerHighest: hslToHex(hPrimary, 6, 90),
-      background: hslToHex(hPrimary, 8, 99),
-      onBackground: hslToHex(hPrimary, 8, 10),
-      outline: hslToHex(hPrimary, 8, 50),
-      outlineVariant: hslToHex(hPrimary, 8, 80),
+      surfaceContainerLow: hslToHex(h, monoS, 96),
+      surfaceContainer: hslToHex(h, monoS, 94),
+      surfaceContainerHigh: hslToHex(h, monoS, 91),
+      surfaceContainerHighest: hslToHex(h, monoS, 88),
+      background: bg,
+      onBackground: primary,
+      outline: hslToHex(h, monoS, 20), // High contrast sharp borders
+      outlineVariant: hslToHex(h, monoS, 85),
       error: '#BA1A1A',
       onError: '#FFFFFF',
       errorContainer: '#FFDAD6',
       onErrorContainer: '#410002',
     };
   } else {
+    // Dark Mode (Sophisticated Carbon/Onyx)
+    const bg = hslToHex(h, monoS, 8); // Deep charcoal
+    const surface = hslToHex(h, monoS, 12); // Slightly lighter charcoal
+    const primary = hslToHex(h, monoS, 92); // Off-white
+    const onPrimary = hslToHex(h, monoS, 8);
+    const primaryContainer = hslToHex(h, monoS, 22);
+    const onPrimaryContainer = primary;
+    const secondary = hslToHex(h, monoS, 75);
+    const onSecondary = hslToHex(h, monoS, 8);
+    const secondaryContainer = hslToHex(h, monoS, 18);
+    const onSecondaryContainer = secondary;
+
     return {
-      primary: hslToHex(hPrimary, sPrimary, 80),
-      onPrimary: hslToHex(hPrimary, sPrimary, 20),
-      primaryContainer: hslToHex(hPrimary, sPrimary, 30),
-      onPrimaryContainer: hslToHex(hPrimary, sPrimary, 90),
-      secondary: hslToHex(hSecondary, sSecondary, 80),
-      onSecondary: hslToHex(hSecondary, sSecondary, 20),
-      secondaryContainer: hslToHex(hSecondary, sSecondary, 30),
-      onSecondaryContainer: hslToHex(hSecondary, sSecondary, 90),
-      tertiary: hslToHex(hTertiary, sTertiary, 80),
-      onTertiary: hslToHex(hTertiary, sTertiary, 20),
-      tertiaryContainer: hslToHex(hTertiary, sTertiary, 30),
-      onTertiaryContainer: hslToHex(hTertiary, sTertiary, 90),
-      surface: hslToHex(hPrimary, 6, 10),
-      onSurface: hslToHex(hPrimary, 12, 90),
-      surfaceVariant: hslToHex(hPrimary, 8, 25),
-      onSurfaceVariant: hslToHex(hPrimary, 12, 80),
-      surfaceContainerLowest: hslToHex(hPrimary, 6, 4),
-      surfaceContainerLow: hslToHex(hPrimary, 6, 12),
-      surfaceContainer: hslToHex(hPrimary, 6, 15),
-      surfaceContainerHigh: hslToHex(hPrimary, 6, 18),
-      surfaceContainerHighest: hslToHex(hPrimary, 6, 22),
-      background: hslToHex(hPrimary, 8, 6),
-      onBackground: hslToHex(hPrimary, 8, 90),
-      outline: hslToHex(hPrimary, 8, 60),
-      outlineVariant: hslToHex(hPrimary, 8, 35),
+      primary,
+      onPrimary,
+      primaryContainer,
+      onPrimaryContainer,
+      secondary,
+      onSecondary,
+      secondaryContainer,
+      onSecondaryContainer,
+      tertiary: secondary,
+      onTertiary: onSecondary,
+      tertiaryContainer: secondaryContainer,
+      onTertiaryContainer: secondary,
+      surface,
+      onSurface: primary,
+      surfaceVariant: hslToHex(h, monoS, 24),
+      onSurfaceVariant: hslToHex(h, monoS, 80),
+      surfaceContainerLowest: hslToHex(h, monoS, 4),
+      surfaceContainerLow: hslToHex(h, monoS, 10),
+      surfaceContainer: hslToHex(h, monoS, 14),
+      surfaceContainerHigh: hslToHex(h, monoS, 18),
+      surfaceContainerHighest: hslToHex(h, monoS, 24),
+      background: bg,
+      onBackground: primary,
+      outline: hslToHex(h, monoS, 80),
+      outlineVariant: hslToHex(h, monoS, 28),
       error: '#FFB4AB',
       onError: '#690005',
       errorContainer: '#93000A',
@@ -158,11 +175,9 @@ export function generateMaterialPalette(sourceHex: string, isDark: boolean): Mat
 }
 
 export const BASELINE_COLORS = [
-  { name: 'Deep Violet (Default)', hex: '#6750A4' },
-  { name: 'Jade Garden', hex: '#386A20' },
-  { name: 'Terracotta Clay', hex: '#A63E2B' },
-  { name: 'Cobalt Sea', hex: '#005FAF' },
-  { name: 'Ochre Sand', hex: '#7D5A00' },
-  { name: 'Charcoal Slate', hex: '#535F70' },
-  { name: 'Neon Lime', hex: '#2B8A00' }
+  { name: 'Warm Charcoal', hex: '#1C1917' },
+  { name: 'Cool Slate', hex: '#1E293B' },
+  { name: 'Onyx Black', hex: '#121212' },
+  { name: 'Neutral Zinc', hex: '#18181B' },
+  { name: 'Pure Carbon', hex: '#000000' }
 ];

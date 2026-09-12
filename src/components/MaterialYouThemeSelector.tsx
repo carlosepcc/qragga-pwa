@@ -23,7 +23,7 @@ export const MaterialYouThemeSelector: React.FC<ThemeSelectorProps> = ({
   return (
     <div 
       id="theme-selector-panel"
-      className="p-5 rounded-3xl border flex flex-col gap-4 w-full"
+      className="p-5 rounded-none border flex flex-col gap-4 w-full"
       style={{
         backgroundColor: 'var(--md-sys-color-surface-container-low, #F7F2FA)',
         borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
@@ -32,29 +32,29 @@ export const MaterialYouThemeSelector: React.FC<ThemeSelectorProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Palette size={18} className="text-[var(--md-sys-color-primary)]" />
-          <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--md-sys-color-on-surface-variant)]">
-            Material You Theme Engine
+          <h3 className="text-sm font-bold uppercase tracking-wider font-mono text-[var(--md-sys-color-on-surface-variant)]">
+            Monochrome Theme Engine
           </h3>
         </div>
 
         {/* Light/Dark Toggle */}
         <button
           onClick={onDarkToggle}
-          className="p-2.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-primary)] transition active:scale-90"
+          className="p-2.5 rounded-none border border-zinc-200 dark:border-zinc-800 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-primary)] transition active:scale-90"
           title="Toggle Day/Night mode"
         >
-          {isDark ? <Sun size={20} /> : <Moon size={20} />}
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
         </button>
       </div>
 
       {/* Dynamic Color seed pickers */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-semibold text-[var(--md-sys-color-on-surface-variant)]">
-          Primary Seed Palette
+        <label className="text-xs font-semibold uppercase tracking-wider text-[var(--md-sys-color-on-surface-variant)] font-mono">
+          Mono Tint Palette
         </label>
         <div className="flex flex-wrap gap-2.5 items-center">
           {/* Custom Color Picker */}
-          <div className="relative w-8 h-8 rounded-full border-2 overflow-hidden flex-shrink-0 cursor-pointer active:scale-95 transition-transform"
+          <div className="relative w-8 h-8 rounded-none border-2 overflow-hidden flex-shrink-0 cursor-pointer active:scale-95 transition-transform"
             style={{ borderColor: 'var(--md-sys-color-outline, #79747E)' }}
             title="Custom seed color picker"
           >
@@ -73,7 +73,7 @@ export const MaterialYouThemeSelector: React.FC<ThemeSelectorProps> = ({
               <button
                 key={item.hex}
                 onClick={() => onColorChange(item.hex)}
-                className="w-8 h-8 rounded-full border flex items-center justify-center relative shadow-sm hover:scale-105 active:scale-95 transition-all"
+                className="w-8 h-8 rounded-none border flex items-center justify-center relative shadow-sm hover:scale-105 active:scale-95 transition-all"
                 style={{
                   backgroundColor: item.hex,
                   borderColor: isSelected ? 'var(--md-sys-color-primary, #6750A4)' : '#CAC4D0',

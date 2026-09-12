@@ -348,10 +348,11 @@ export default function App() {
         {/* App Logo */}
         <div className="flex flex-col items-center gap-1">
           <div 
-            className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm"
+            className="w-12 h-12 rounded-none flex items-center justify-center border"
             style={{
               backgroundColor: 'var(--md-sys-color-primary-container, #EADDFF)',
               color: 'var(--md-sys-color-on-primary-container, #21005D)',
+              borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)'
             }}
           >
             <QrCode size={24} className="stroke-[2.5]" />
@@ -367,13 +368,13 @@ export default function App() {
               setInitialCreatorFormat('qrcode');
               navigateTo('create');
             }}
-            className="flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-300 relative group active:scale-95"
+            className="flex flex-col items-center gap-1.5 p-2 rounded-none transition-all duration-300 relative group active:scale-95"
           >
-            <div className="w-14 h-8 rounded-full flex items-center justify-center relative overflow-hidden transition-colors duration-300">
+            <div className="w-14 h-8 rounded-none flex items-center justify-center relative overflow-hidden transition-colors duration-300">
               {activeTab === 'create' && (
                 <motion.div
                   layoutId="desktopActivePill"
-                  className="absolute inset-0 rounded-full"
+                  className="absolute inset-0 rounded-none"
                   style={{ backgroundColor: 'var(--md-sys-color-secondary-container, #E8DEF8)' }}
                   transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                 />
@@ -388,18 +389,18 @@ export default function App() {
                 }}
               />
             </div>
-            <span className="text-[11px] font-medium tracking-tight">Create</span>
+            <span className="text-[11px] font-medium tracking-tight font-mono">Create</span>
           </button>
 
           <button
             onClick={() => navigateTo('scan')}
-            className="flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-300 relative group active:scale-95"
+            className="flex flex-col items-center gap-1.5 p-2 rounded-none transition-all duration-300 relative group active:scale-95"
           >
-            <div className="w-14 h-8 rounded-full flex items-center justify-center relative overflow-hidden transition-colors duration-300">
+            <div className="w-14 h-8 rounded-none flex items-center justify-center relative overflow-hidden transition-colors duration-300">
               {activeTab === 'scan' && (
                 <motion.div
                   layoutId="desktopActivePill"
-                  className="absolute inset-0 rounded-full"
+                  className="absolute inset-0 rounded-none"
                   style={{ backgroundColor: 'var(--md-sys-color-secondary-container, #E8DEF8)' }}
                   transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                 />
@@ -414,18 +415,18 @@ export default function App() {
                 }}
               />
             </div>
-            <span className="text-[11px] font-medium tracking-tight">Scanned</span>
+            <span className="text-[11px] font-medium tracking-tight font-mono">Scanned</span>
           </button>
 
           <button
             onClick={() => navigateTo('history')}
-            className="flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-300 relative group active:scale-95"
+            className="flex flex-col items-center gap-1.5 p-2 rounded-none transition-all duration-300 relative group active:scale-95"
           >
-            <div className="w-14 h-8 rounded-full flex items-center justify-center relative overflow-hidden transition-colors duration-300">
+            <div className="w-14 h-8 rounded-none flex items-center justify-center relative overflow-hidden transition-colors duration-300">
               {activeTab === 'history' && (
                 <motion.div
                   layoutId="desktopActivePill"
-                  className="absolute inset-0 rounded-full"
+                  className="absolute inset-0 rounded-none"
                   style={{ backgroundColor: 'var(--md-sys-color-secondary-container, #E8DEF8)' }}
                   transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                 />
@@ -440,14 +441,14 @@ export default function App() {
                 }}
               />
             </div>
-            <span className="text-[11px] font-medium tracking-tight">History</span>
+            <span className="text-[11px] font-medium tracking-tight font-mono">History</span>
           </button>
         </div>
 
         {/* Settings wheel at bottom */}
         <button
           onClick={() => navigateTo('preferences')}
-          className="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-on-surface-variant)] transition active:scale-95"
+          className="p-3 rounded-none hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-on-surface-variant)] transition active:scale-95"
           title="Theme & settings"
         >
           <SettingsIcon size={22} className="animate-[spin_10s_linear_infinite]" />
@@ -469,10 +470,11 @@ export default function App() {
           <div className="flex items-center gap-3">
             {/* Logo on mobile header */}
             <div 
-              className="md:hidden w-10 h-10 rounded-xl flex items-center justify-center"
+              className="md:hidden w-10 h-10 rounded-none flex items-center justify-center border"
               style={{
                 backgroundColor: 'var(--md-sys-color-primary-container, #EADDFF)',
                 color: 'var(--md-sys-color-on-primary-container, #21005D)',
+                borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)'
               }}
             >
               <QrCode size={20} />
@@ -490,15 +492,15 @@ export default function App() {
             {needRefresh && (
               <button
                 onClick={() => setIsUpdateModalOpen(true)}
-                className="relative p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-primary)] transition active:scale-95 group"
+                className="relative p-2 rounded-none border border-zinc-200 dark:border-zinc-800 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-primary)] transition active:scale-95 group"
                 title="Update available offline"
               >
                 <motion.div
                   animate={{ scale: [1, 1.25, 1] }}
                   transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                  className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"
+                  className="absolute top-1 right-1 w-1.5 h-1.5 rounded-none bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"
                 />
-                <RotateCw size={20} className="text-emerald-600 dark:text-emerald-400" />
+                <RotateCw size={18} className="text-emerald-600 dark:text-emerald-400" />
               </button>
             )}
 
@@ -508,18 +510,18 @@ export default function App() {
                 navigateTo('scan');
                 setAutoOpenScanner(true);
               }}
-              className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-primary)] transition active:scale-95"
+              className="p-2 rounded-none border border-zinc-200 dark:border-zinc-800 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-primary)] transition active:scale-95"
               title="Quick Scan"
             >
-              <ScanLine size={20} />
+              <ScanLine size={18} />
             </button>
 
             <button
               onClick={() => navigateTo('preferences')}
-              className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-primary)] transition active:scale-95"
+              className="p-2 rounded-none border border-zinc-200 dark:border-zinc-800 hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-primary)] transition active:scale-95"
               title="Preferences"
             >
-              <SettingsIcon size={20} />
+              <SettingsIcon size={18} />
             </button>
           </div>
         </header>
@@ -577,127 +579,127 @@ export default function App() {
 
       {/* 3. MOBILE BOTTOM NAVIGATION (Visible on mobile screens) */}
       <nav 
-        id="mobile-bottom-navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 h-20 border-t z-40 flex justify-around items-center px-4"
-        style={{
-          backgroundColor: 'var(--md-sys-color-surface-container-low, #F7F2FA)',
-          borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
-        }}
-      >
-        <button
-          onClick={() => {
-            setInitialCreatorValue('');
-            setInitialCreatorFormat('qrcode');
-            navigateTo('create');
-          }}
-          className="flex flex-col items-center gap-1 py-1 px-3 min-w-16 text-center active:scale-95"
-        >
-          <div className="px-5 py-1.5 rounded-full flex items-center justify-center relative overflow-hidden transition-all duration-300">
-            {activeTab === 'create' && (
-              <motion.div
-                layoutId="mobileActivePill"
-                className="absolute inset-0 rounded-full"
-                style={{ backgroundColor: 'var(--md-sys-color-secondary-container, #E8DEF8)' }}
-                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-              />
-            )}
-            <PlusCircle 
-              size={18} 
-              className="relative z-10 transition-colors duration-300" 
-              style={{
-                color: activeTab === 'create' 
-                  ? 'var(--md-sys-color-on-secondary-container, #1D192B)' 
-                  : 'var(--md-sys-color-on-surface-variant, #49454F)',
-              }}
-            />
-          </div>
-          <span className="text-[10px] font-semibold tracking-tight mt-0.5">Create</span>
-        </button>
+         id="mobile-bottom-navigation"
+         className="md:hidden fixed bottom-0 left-0 right-0 h-20 border-t z-40 flex justify-around items-center px-4"
+         style={{
+           backgroundColor: 'var(--md-sys-color-surface-container-low, #F7F2FA)',
+           borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
+         }}
+       >
+         <button
+           onClick={() => {
+             setInitialCreatorValue('');
+             setInitialCreatorFormat('qrcode');
+             navigateTo('create');
+           }}
+           className="flex flex-col items-center gap-1 py-1 px-3 min-w-16 text-center active:scale-95"
+         >
+           <div className="px-5 py-1.5 rounded-none flex items-center justify-center relative overflow-hidden transition-all duration-300">
+             {activeTab === 'create' && (
+               <motion.div
+                 layoutId="mobileActivePill"
+                 className="absolute inset-0 rounded-none"
+                 style={{ backgroundColor: 'var(--md-sys-color-secondary-container, #E8DEF8)' }}
+                 transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+               />
+             )}
+             <PlusCircle 
+               size={18} 
+               className="relative z-10 transition-colors duration-300" 
+               style={{
+                 color: activeTab === 'create' 
+                   ? 'var(--md-sys-color-on-secondary-container, #1D192B)' 
+                   : 'var(--md-sys-color-on-surface-variant, #49454F)',
+               }}
+             />
+           </div>
+           <span className="text-[10px] font-semibold tracking-tight mt-0.5">Create</span>
+         </button>
 
-        <button
-          onClick={() => navigateTo('scan')}
-          className="flex flex-col items-center gap-1 py-1 px-3 min-w-16 text-center active:scale-95"
-        >
-          <div className="px-5 py-1.5 rounded-full flex items-center justify-center relative overflow-hidden transition-all duration-300">
-            {activeTab === 'scan' && (
-              <motion.div
-                layoutId="mobileActivePill"
-                className="absolute inset-0 rounded-full"
-                style={{ backgroundColor: 'var(--md-sys-color-secondary-container, #E8DEF8)' }}
-                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-              />
-            )}
-            <ScanLine 
-              size={18} 
-              className="relative z-10 transition-colors duration-300" 
-              style={{
-                color: activeTab === 'scan' 
-                  ? 'var(--md-sys-color-on-secondary-container, #1D192B)' 
-                  : 'var(--md-sys-color-on-surface-variant, #49454F)',
-              }}
-            />
-          </div>
-          <span className="text-[10px] font-semibold tracking-tight mt-0.5">Scanned</span>
-        </button>
+         <button
+           onClick={() => navigateTo('scan')}
+           className="flex flex-col items-center gap-1 py-1 px-3 min-w-16 text-center active:scale-95"
+         >
+           <div className="px-5 py-1.5 rounded-none flex items-center justify-center relative overflow-hidden transition-all duration-300">
+             {activeTab === 'scan' && (
+               <motion.div
+                 layoutId="mobileActivePill"
+                 className="absolute inset-0 rounded-none"
+                 style={{ backgroundColor: 'var(--md-sys-color-secondary-container, #E8DEF8)' }}
+                 transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+               />
+             )}
+             <ScanLine 
+               size={18} 
+               className="relative z-10 transition-colors duration-300" 
+               style={{
+                 color: activeTab === 'scan' 
+                   ? 'var(--md-sys-color-on-secondary-container, #1D192B)' 
+                   : 'var(--md-sys-color-on-surface-variant, #49454F)',
+               }}
+             />
+           </div>
+           <span className="text-[10px] font-semibold tracking-tight mt-0.5">Scanned</span>
+         </button>
 
-        <button
-          onClick={() => navigateTo('history')}
-          className="flex flex-col items-center gap-1 py-1 px-3 min-w-16 text-center active:scale-95"
-        >
-          <div className="px-5 py-1.5 rounded-full flex items-center justify-center relative overflow-hidden transition-all duration-300">
-            {activeTab === 'history' && (
-              <motion.div
-                layoutId="mobileActivePill"
-                className="absolute inset-0 rounded-full"
-                style={{ backgroundColor: 'var(--md-sys-color-secondary-container, #E8DEF8)' }}
-                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-              />
-            )}
-            <HistoryIcon 
-              size={18} 
-              className="relative z-10 transition-colors duration-300" 
-              style={{
-                color: activeTab === 'history' 
-                  ? 'var(--md-sys-color-on-secondary-container, #1D192B)' 
-                  : 'var(--md-sys-color-on-surface-variant, #49454F)',
-              }}
-            />
-          </div>
-          <span className="text-[10px] font-semibold tracking-tight mt-0.5">History</span>
-        </button>
-      </nav>
+         <button
+           onClick={() => navigateTo('history')}
+           className="flex flex-col items-center gap-1 py-1 px-3 min-w-16 text-center active:scale-95"
+         >
+           <div className="px-5 py-1.5 rounded-none flex items-center justify-center relative overflow-hidden transition-all duration-300">
+             {activeTab === 'history' && (
+               <motion.div
+                 layoutId="mobileActivePill"
+                 className="absolute inset-0 rounded-none"
+                 style={{ backgroundColor: 'var(--md-sys-color-secondary-container, #E8DEF8)' }}
+                 transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+               />
+             )}
+             <HistoryIcon 
+               size={18} 
+               className="relative z-10 transition-colors duration-300" 
+               style={{
+                 color: activeTab === 'history' 
+                   ? 'var(--md-sys-color-on-secondary-container, #1D192B)' 
+                   : 'var(--md-sys-color-on-surface-variant, #49454F)',
+               }}
+             />
+           </div>
+           <span className="text-[10px] font-semibold tracking-tight mt-0.5">History</span>
+         </button>
+       </nav>
 
-      {/* 4. SETTINGS & PREFERENCES FLY-IN DRAWER / BOTTOM SHEET OVERLAY */}
-      <AnimatePresence>
-        {isSettingsOpen && (
-          <div 
-            className="fixed inset-0 z-50 flex items-end md:items-stretch justify-center md:justify-end bg-black/60 backdrop-blur-sm"
-            onClick={closePreferences}
-          >
-            {/* Drawer sheet / Bottom Sheet */}
-            <motion.div
-              initial={isMobile ? { y: '100%', x: 0 } : { x: '100%', y: 0 }}
-              animate={isMobile ? { y: 0, x: 0 } : { x: 0, y: 0 }}
-              exit={isMobile ? { y: '100%', x: 0 } : { x: '100%', y: 0 }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className={`w-full flex flex-col p-6 shadow-2xl relative select-none ${
-                isMobile 
-                  ? 'h-[85vh] rounded-t-[28px] bottom-0 left-0 right-0 fixed' 
-                  : 'max-w-sm h-full border-l'
-              }`}
-              style={{
-                backgroundColor: 'var(--md-sys-color-surface, #FEF7FF)',
-                color: 'var(--md-sys-color-on-surface, #1D1B20)',
-                borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Native Android Drag Handle for Mobile Sheet */}
-              {isMobile && (
-                <div className="w-full flex justify-center pb-3">
-                  <div className="w-12 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700 opacity-60" />
-                </div>
-              )}
+       {/* 4. SETTINGS & PREFERENCES FLY-IN DRAWER / BOTTOM SHEET OVERLAY */}
+       <AnimatePresence>
+         {isSettingsOpen && (
+           <div 
+             className="fixed inset-0 z-50 flex items-end md:items-stretch justify-center md:justify-end bg-black/60 backdrop-blur-sm"
+             onClick={closePreferences}
+           >
+             {/* Drawer sheet / Bottom Sheet */}
+             <motion.div
+               initial={isMobile ? { y: '100%', x: 0 } : { x: '100%', y: 0 }}
+               animate={isMobile ? { y: 0, x: 0 } : { x: 0, y: 0 }}
+               exit={isMobile ? { y: '100%', x: 0 } : { x: '100%', y: 0 }}
+               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+               className={`w-full flex flex-col p-6 shadow-2xl relative select-none ${
+                 isMobile 
+                   ? 'h-[85vh] rounded-none bottom-0 left-0 right-0 fixed' 
+                   : 'max-w-sm h-full border-l'
+               }`}
+               style={{
+                 backgroundColor: 'var(--md-sys-color-surface, #FEF7FF)',
+                 color: 'var(--md-sys-color-on-surface, #1D1B20)',
+                 borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
+               }}
+               onClick={(e) => e.stopPropagation()}
+             >
+               {/* Native Android Drag Handle for Mobile Sheet */}
+               {isMobile && (
+                 <div className="w-full flex justify-center pb-3">
+                   <div className="w-12 h-1.5 rounded-none bg-zinc-300 dark:bg-zinc-700 opacity-60" />
+                 </div>
+               )}
 
               {/* Header */}
               <div 
@@ -728,7 +730,7 @@ export default function App() {
                 />
 
                 {/* Local Cache Info / Compliance */}
-                <div className="p-5 rounded-3xl border flex flex-col gap-3 text-xs leading-relaxed"
+                <div className="p-5 rounded-none border flex flex-col gap-3 text-xs leading-relaxed"
                   style={{
                     backgroundColor: 'var(--md-sys-color-surface-container-low, #F7F2FA)',
                     borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
@@ -764,7 +766,7 @@ export default function App() {
               {/* Close footer button */}
               <button
                 onClick={closePreferences}
-                className="w-full py-3.5 rounded-full text-sm font-semibold tracking-wide hover:opacity-95 shadow transition mt-auto"
+                className="w-full py-3.5 rounded-none text-sm font-semibold tracking-wide hover:opacity-95 shadow transition mt-auto"
                 style={{
                   backgroundColor: 'var(--md-sys-color-primary, #6750A4)',
                   color: 'var(--md-sys-color-on-primary, #FFFFFF)',
@@ -799,7 +801,7 @@ export default function App() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: 'spring', duration: 0.3 }}
-              className="relative w-full max-w-sm rounded-3xl p-6 shadow-2xl border overflow-hidden z-10"
+              className="relative w-full max-w-sm rounded-none p-6 shadow-2xl border overflow-hidden z-10"
               style={{
                 backgroundColor: 'var(--md-sys-color-surface-container-high, #F3EDF7)',
                 color: 'var(--md-sys-color-on-surface, #1D1B20)',
@@ -808,7 +810,7 @@ export default function App() {
             >
               <div className="flex gap-4 items-start">
                 <div 
-                  className="p-3 rounded-2xl flex items-center justify-center flex-shrink-0"
+                  className="p-3 rounded-none border border-zinc-200 dark:border-zinc-800 flex items-center justify-center flex-shrink-0"
                   style={{
                     backgroundColor: 'var(--md-sys-color-primary-container, #EADDFF)',
                     color: 'var(--md-sys-color-on-primary-container, #21005D)',
@@ -830,7 +832,7 @@ export default function App() {
               <div className="mt-6 flex gap-2 justify-end">
                 <button
                   onClick={() => setIsUpdateModalOpen(false)}
-                  className="px-4 py-2 rounded-full text-xs font-semibold tracking-wide hover:bg-black/5 transition"
+                  className="px-4 py-2 rounded-none text-xs font-semibold tracking-wide hover:bg-black/5 transition border border-zinc-200 dark:border-zinc-800"
                   style={{ color: 'var(--md-sys-color-primary, #6750A4)' }}
                 >
                   Keep Using Offline
@@ -839,7 +841,7 @@ export default function App() {
                   onClick={() => {
                     updateServiceWorker(true);
                   }}
-                  className="px-4 py-2 rounded-full text-xs font-semibold tracking-wide shadow-sm hover:opacity-90 transition flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-none text-xs font-semibold tracking-wide shadow-sm hover:opacity-90 transition flex items-center gap-1.5"
                   style={{
                     backgroundColor: 'var(--md-sys-color-primary, #6750A4)',
                     color: 'var(--md-sys-color-on-primary, #FFFFFF)',

@@ -490,7 +490,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
         <button
           id="btn-launch-fullscreen-scanner"
           onClick={() => setIsFullscreenScannerOpen(true)}
-          className="w-full flex items-center justify-between p-6 rounded-[24px] border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-[var(--md-sys-color-primary)] dark:hover:border-[var(--md-sys-color-primary)] hover:bg-[var(--md-sys-color-primary-container)]/10 dark:hover:bg-[var(--md-sys-color-primary-container)]/5 transition-all duration-300 active:scale-[0.98] mb-8 text-left"
+          className="w-full flex items-center justify-between p-6 rounded-none border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-[var(--md-sys-color-primary)] dark:hover:border-[var(--md-sys-color-primary)] hover:bg-[var(--md-sys-color-primary-container)]/10 dark:hover:bg-[var(--md-sys-color-primary-container)]/5 transition-all duration-300 active:scale-[0.98] mb-8 text-left"
           style={{
             backgroundColor: 'var(--md-sys-color-surface-container-high, #ECE6F0)',
             color: 'var(--md-sys-color-on-surface, #1D1B20)',
@@ -498,7 +498,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
         >
           <div className="flex items-center gap-4">
             <div 
-              className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner"
+              className="w-14 h-14 rounded-none border border-zinc-300 dark:border-zinc-700 flex items-center justify-center shadow-inner"
               style={{
                 backgroundColor: 'var(--md-sys-color-primary-container, #EADDFF)',
                 color: 'var(--md-sys-color-on-primary-container, #21005D)',
@@ -523,10 +523,11 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
             </h2>
           </div>
           <span 
-            className="text-xs font-bold px-2.5 py-1 rounded-full"
+            className="text-xs font-bold px-2.5 py-1 rounded-none border"
             style={{
               backgroundColor: 'var(--md-sys-color-secondary-container, #E8DEF8)',
               color: 'var(--md-sys-color-on-secondary-container, #1D192B)',
+              borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)'
             }}
           >
             {sortedScanned.length} items
@@ -540,7 +541,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
               <div
                 key={item.id}
                 id={`scanned-item-${item.id}`}
-                className="p-4 rounded-2xl border flex items-center justify-between gap-4 transition hover:shadow-sm"
+                className="p-4 rounded-none border flex items-center justify-between gap-4 transition hover:shadow-sm"
                 style={{
                   backgroundColor: 'var(--md-sys-color-surface-container-low, #F7F2FA)',
                   borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
@@ -548,7 +549,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div 
-                    className="w-1.5 h-11 rounded-full flex-shrink-0"
+                    className="w-1.5 h-11 rounded-none flex-shrink-0"
                     style={{ backgroundColor: 'var(--md-sys-color-tertiary, #7D5260)' }}
                   />
                   <div className="min-w-0">
@@ -579,7 +580,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
                       href={item.value}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-primary)] transition"
+                      className="p-2 rounded-none hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-primary)] transition"
                       title="Open link"
                     >
                       <ExternalLink size={16} />
@@ -590,7 +591,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
                     onClick={() => {
                       navigator.clipboard.writeText(item.value);
                     }}
-                    className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-outline)] transition"
+                    className="p-2 rounded-none hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-outline)] transition"
                     title="Copy value"
                   >
                     <Clipboard size={16} />
@@ -598,7 +599,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
 
                   <button
                     onClick={() => onNavigateToCreator(item.value, item.format)}
-                    className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-outline)] transition"
+                    className="p-2 rounded-none hover:bg-black/5 dark:hover:bg-white/5 text-[var(--md-sys-color-outline)] transition"
                     title="Recreate / Customize"
                   >
                     <Sparkles size={16} />
@@ -606,7 +607,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
 
                   <button
                     onClick={() => onToggleFavorite(item.id)}
-                    className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition"
+                    className="p-2 rounded-none hover:bg-black/5 dark:hover:bg-white/5 transition"
                     style={{
                       color: item.isFavorite ? '#E0A800' : 'var(--md-sys-color-outline, #79747E)'
                     }}
@@ -617,7 +618,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
 
                   <button
                     onClick={() => onDeleteItem(item.id)}
-                    className="p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-950/20 text-red-500 hover:text-red-700 transition"
+                    className="p-2 rounded-none hover:bg-red-50 dark:hover:bg-red-950/20 text-red-500 hover:text-red-700 transition"
                     title="Delete item"
                   >
                     <Trash2 size={16} />
@@ -626,7 +627,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
               </div>
             ))
           ) : (
-            <div className="flex flex-col items-center justify-center p-12 text-center rounded-3xl border border-dashed border-zinc-300 dark:border-zinc-800">
+            <div className="flex flex-col items-center justify-center p-12 text-center rounded-none border border-dashed border-zinc-300 dark:border-zinc-800">
               <History size={36} className="text-zinc-300 dark:text-zinc-700 mb-2" />
               <p className="text-sm opacity-60 text-[var(--md-sys-color-on-background)]">
                 No scanned barcodes found in your offline history.
@@ -670,14 +671,14 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
                   /* Central HUD Targeting Frame - white corners, no square borders */
                   <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
                     <div className="w-64 h-64 md:w-80 md:h-80 relative flex items-center justify-center bg-transparent">
-                      {/* White bracket corners */}
-                      <div className="absolute top-0 left-0 w-9 h-9 border-t-4 border-l-4 border-white rounded-tl-[20px]"></div>
-                      <div className="absolute top-0 right-0 w-9 h-9 border-t-4 border-r-4 border-white rounded-tr-[20px]"></div>
-                      <div className="absolute bottom-0 left-0 w-9 h-9 border-b-4 border-l-4 border-white rounded-bl-[20px]"></div>
-                      <div className="absolute bottom-0 right-0 w-9 h-9 border-b-4 border-r-4 border-white rounded-br-[20px]"></div>
+                      {/* White bracket corners - perfectly square brutalist lines */}
+                      <div className="absolute top-0 left-0 w-9 h-9 border-t-4 border-l-4 border-white"></div>
+                      <div className="absolute top-0 right-0 w-9 h-9 border-t-4 border-r-4 border-white"></div>
+                      <div className="absolute bottom-0 left-0 w-9 h-9 border-b-4 border-l-4 border-white"></div>
+                      <div className="absolute bottom-0 right-0 w-9 h-9 border-b-4 border-r-4 border-white"></div>
                     </div>
                     
-                    <span className="mt-8 px-4.5 py-2 rounded-full bg-white/10 border border-black/30 text-white text-[10px] font-extrabold uppercase tracking-widest backdrop-blur-md">
+                    <span className="mt-8 px-4.5 py-2 rounded-none bg-white/10 border border-black/30 text-white text-[10px] font-extrabold uppercase tracking-widest backdrop-blur-md">
                       Point camera at QR or Barcode
                     </span>
                   </div>
@@ -701,7 +702,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
                 {videoDevices.length > 1 ? (
                   <div className="relative flex items-center justify-center">
                     {/* Visual Button: CameraIcon + ChevronDown */}
-                    <div className="flex items-center gap-1 bg-white/15 hover:bg-white/25 backdrop-blur-lg p-3 rounded-full border border-black/30 text-white transition active:scale-90">
+                    <div className="flex items-center gap-1 bg-white/15 hover:bg-white/25 backdrop-blur-lg p-3 rounded-none border border-black/30 text-white transition active:scale-90">
                       <Camera size={18} />
                       <ChevronDown size={14} className="opacity-80" />
                     </div>
@@ -720,7 +721,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
                     </select>
                   </div>
                 ) : (
-                  <span className="bg-white/15 backdrop-blur-lg px-3.5 py-2 rounded-full border border-black/30 text-[10px] font-extrabold tracking-wider text-white/90 uppercase">
+                  <span className="bg-white/15 backdrop-blur-lg px-3.5 py-2 rounded-none border border-black/30 text-[10px] font-extrabold tracking-wider text-white/90 uppercase">
                     Live Lens
                   </span>
                 )}
@@ -733,7 +734,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
                 <button
                   type="button"
                   onClick={() => setSoundEnabled(!soundEnabled)}
-                  className="p-3.5 rounded-full bg-white/15 border border-black/30 text-white hover:bg-white/25 transition active:scale-90 cursor-pointer backdrop-blur-lg"
+                  className="p-3.5 rounded-none bg-white/15 border border-black/30 text-white hover:bg-white/25 transition active:scale-90 cursor-pointer backdrop-blur-lg"
                   title={soundEnabled ? 'Mute beep feedback' : 'Unmute beep feedback'}
                 >
                   {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
@@ -744,7 +745,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
                   <button
                     type="button"
                     onClick={toggleTorch}
-                    className="p-3.5 rounded-full bg-white/15 border border-black/30 text-white hover:bg-white/25 transition active:scale-90 cursor-pointer backdrop-blur-lg"
+                    className="p-3.5 rounded-none bg-white/15 border border-black/30 text-white hover:bg-white/25 transition active:scale-90 cursor-pointer backdrop-blur-lg"
                     title="Toggle device flash"
                   >
                     {torchOn ? <ZapOff size={18} /> : <Zap size={18} />}
@@ -753,7 +754,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
 
                 {/* Import Image from File */}
                 <label 
-                  className="p-3.5 rounded-full bg-white/15 border border-black/30 text-white hover:bg-white/25 transition active:scale-90 cursor-pointer backdrop-blur-lg flex items-center justify-center"
+                  className="p-3.5 rounded-none bg-white/15 border border-black/30 text-white hover:bg-white/25 transition active:scale-90 cursor-pointer backdrop-blur-lg flex items-center justify-center"
                   title="Scan from image file"
                 >
                   <Upload size={18} />
@@ -769,7 +770,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsFullscreenScannerOpen(false)}
-                  className="p-3.5 rounded-full bg-white/15 border border-black/30 text-white hover:bg-white/25 transition active:scale-90 cursor-pointer backdrop-blur-lg"
+                  className="p-3.5 rounded-none bg-white/15 border border-black/30 text-white hover:bg-white/25 transition active:scale-90 cursor-pointer backdrop-blur-lg"
                   title="Close scanner"
                 >
                   <X size={18} />
@@ -780,7 +781,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
             {/* Drag Over Shield */}
             {dragActive && (
               <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-lg z-50 flex flex-col items-center justify-center p-6 text-center select-none animate-in fade-in duration-200">
-                <div className="p-5 rounded-full bg-white text-zinc-950 mb-4 shadow-2xl animate-bounce">
+                <div className="p-5 rounded-none bg-white text-zinc-950 mb-4 shadow-2xl animate-bounce border border-zinc-200">
                   <Upload size={36} />
                 </div>
                 <h2 className="text-xl font-extrabold tracking-tight text-white mb-1.5">
@@ -801,146 +802,146 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
                   initial={{ y: '100%', opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   exit={{ y: '100%', opacity: 0 }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-                  drag="y"
-                  dragConstraints={{ top: 0, bottom: 200 }}
-                  dragElastic={0.4}
-                  onDragEnd={(event, info) => {
-                    // Swipe down threshold
-                    if (info.offset.y > 80) {
-                      handleDismissActiveResult();
-                    }
-                  }}
-                  className="fixed bottom-6 left-4 right-4 md:left-1/2 md:right-auto md:w-[500px] md:-translate-x-1/2 z-40 rounded-3xl p-4.5 border shadow-[0_10px_40px_rgba(0,0,0,0.7)] flex flex-col backdrop-blur-2xl cursor-grab active:cursor-grabbing select-none"
-                  style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.92)', // Gorgeous whiteAlpha overlay
-                    borderColor: 'rgba(0, 0, 0, 0.25)', // blackAlpha border stroke
-                    color: '#111827' // Clean dark-zinc text for WCAG contrast AA check
-                  }}
-                >
-                  {/* Swipe Grab Indicator */}
-                  <div className="w-10 h-1 bg-zinc-400/55 rounded-full mx-auto mb-2.5 flex-shrink-0" />
-
-                  <div className="flex items-center justify-between gap-4">
-                    {/* Left Column: Icon & Scan Info */}
-                    <div className="flex flex-col gap-1 min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-zinc-950 text-white">
-                          {getFormatDisplayName(activeScanResult.format)}
-                        </span>
-                        {hasSavedActiveResult && (
-                          <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
-                            <Check size={9} strokeWidth={3} /> SAVED
-                          </span>
-                        )}
-                      </div>
-                      
-                      {/* Scanned Decoded Value (wide and truncated to keep height very low) */}
-                      <p className="text-xs font-mono break-all line-clamp-2 leading-relaxed text-zinc-800 pr-2">
-                        {activeScanResult.value}
-                      </p>
-                    </div>
-
-                    {/* Right Column: Interaction Action Buttons (No text, pure icon buttons) */}
-                    <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                      
-                      {/* Copy Action */}
-                      <button
-                        onClick={handleCopyActiveResult}
-                        className={`p-2.5 rounded-full border transition active:scale-95 ${
-                          hasSavedActiveResult 
-                            ? 'bg-zinc-100 text-zinc-500 border-zinc-200' 
-                            : 'bg-white hover:bg-zinc-50 text-zinc-900 border-zinc-300 shadow-sm'
-                        }`}
-                        title="Copy text & save"
-                      >
-                        <Clipboard size={16} />
-                      </button>
-
-                      {/* Open Link Action (if URL) */}
-                      {isUrl(activeScanResult.value) && (
-                        <button
-                          onClick={handleOpenLinkActiveResult}
-                          className="p-2.5 rounded-full bg-zinc-950 hover:bg-zinc-800 text-white transition active:scale-95 shadow-sm border border-zinc-800"
-                          title="Open link in new tab"
-                        >
-                          <ExternalLink size={16} />
-                        </button>
-                      )}
-
-                      {/* Recreate & Design Action */}
-                      <button
-                        onClick={handleCustomizeActiveResult}
-                        className="p-2.5 rounded-full bg-[var(--md-sys-color-primary,#6750A4)] text-white hover:opacity-90 transition active:scale-95 shadow-sm border border-black/10"
-                        title="Personalize / Redesign this code"
-                      >
-                        <Sparkles size={16} />
-                      </button>
-
-                      {/* Save Explicit Action */}
-                      {!hasSavedActiveResult && (
-                        <button
-                          onClick={handleSaveActiveResult}
-                          className="p-2.5 rounded-full bg-white hover:bg-zinc-50 text-zinc-900 border border-zinc-300 shadow-sm transition active:scale-95"
-                          title="Save to history list"
-                        >
-                          <Bookmark size={16} />
-                        </button>
-                      )}
-
-                      {/* Dismiss Result Button */}
-                      <button
-                        onClick={handleDismissActiveResult}
-                        className="p-2.5 rounded-full hover:bg-zinc-200/80 text-zinc-600 transition active:scale-95 border border-transparent"
-                        title="Dismiss"
-                      >
-                        <X size={16} />
-                      </button>
-
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Error Center Sheet overlay (within fullscreen reader) */}
-            {errorMsg && (
-              <div className="absolute inset-0 flex items-center justify-center p-6 bg-zinc-950/85 backdrop-blur-lg z-40 text-center">
-                <div className="max-w-md w-full rounded-[32px] p-6 bg-white border border-zinc-200 shadow-2xl flex flex-col items-center animate-in scale-in duration-300 text-zinc-950">
-                  <div className="p-4 rounded-3xl mb-4 text-red-600 bg-red-50">
-                    <CameraOff size={36} />
-                  </div>
-                  <h3 className="text-lg font-bold tracking-tight mb-2">
-                    Camera Access Needed
-                  </h3>
-                  <p className="text-xs opacity-75 mb-6 leading-relaxed">
-                    {errorMsg}
-                  </p>
-                  
-                  <div className="flex gap-3 items-center w-full">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setErrorMsg('');
-                        startScanning(selectedDeviceId);
-                      }}
-                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full text-xs font-bold tracking-wide shadow-md bg-[var(--md-sys-color-primary,#6750A4)] hover:opacity-95 text-white active:scale-95 transition"
-                    >
-                      <Camera size={14} />
-                      <span>Retry</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setIsFullscreenScannerOpen(false)}
-                      className="flex-1 px-6 py-3 rounded-full text-xs font-bold tracking-wide border border-zinc-300 hover:bg-zinc-50 text-zinc-800 active:scale-95 transition"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+                   transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+                   drag="y"
+                   dragConstraints={{ top: 0, bottom: 200 }}
+                   dragElastic={0.4}
+                   onDragEnd={(event, info) => {
+                     // Swipe down threshold
+                     if (info.offset.y > 80) {
+                       handleDismissActiveResult();
+                     }
+                   }}
+                   className="fixed bottom-6 left-4 right-4 md:left-1/2 md:right-auto md:w-[500px] md:-translate-x-1/2 z-40 rounded-none p-4.5 border shadow-[0_10px_40px_rgba(0,0,0,0.7)] flex flex-col backdrop-blur-2xl cursor-grab active:cursor-grabbing select-none"
+                   style={{
+                     backgroundColor: 'rgba(255, 255, 255, 0.92)', // Gorgeous whiteAlpha overlay
+                     borderColor: 'rgba(0, 0, 0, 0.25)', // blackAlpha border stroke
+                     color: '#111827' // Clean dark-zinc text for WCAG contrast AA check
+                   }}
+                 >
+                   {/* Swipe Grab Indicator */}
+                   <div className="w-10 h-1 bg-zinc-400/55 rounded-none mx-auto mb-2.5 flex-shrink-0" />
+ 
+                   <div className="flex items-center justify-between gap-4">
+                     {/* Left Column: Icon & Scan Info */}
+                     <div className="flex flex-col gap-1 min-w-0 flex-1">
+                       <div className="flex items-center gap-2">
+                         <span className="px-2.5 py-0.5 rounded-none border border-black/30 text-[9px] font-extrabold tracking-wider uppercase bg-zinc-950 text-white">
+                           {getFormatDisplayName(activeScanResult.format)}
+                         </span>
+                         {hasSavedActiveResult && (
+                           <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-green-700 bg-green-100 px-2 py-0.5 rounded-none border border-green-200">
+                             <Check size={9} strokeWidth={3} /> SAVED
+                           </span>
+                         )}
+                       </div>
+                       
+                       {/* Scanned Decoded Value (wide and truncated to keep height very low) */}
+                       <p className="text-xs font-mono break-all line-clamp-2 leading-relaxed text-zinc-800 pr-2">
+                         {activeScanResult.value}
+                       </p>
+                     </div>
+ 
+                     {/* Right Column: Interaction Action Buttons (No text, pure icon buttons) */}
+                     <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                       
+                       {/* Copy Action */}
+                       <button
+                         onClick={handleCopyActiveResult}
+                         className={`p-2.5 rounded-none border transition active:scale-95 ${
+                           hasSavedActiveResult 
+                             ? 'bg-zinc-100 text-zinc-500 border-zinc-200' 
+                             : 'bg-white hover:bg-zinc-50 text-zinc-900 border-zinc-300 shadow-sm'
+                         }`}
+                         title="Copy text & save"
+                       >
+                         <Clipboard size={16} />
+                       </button>
+ 
+                       {/* Open Link Action (if URL) */}
+                       {isUrl(activeScanResult.value) && (
+                         <button
+                           onClick={handleOpenLinkActiveResult}
+                           className="p-2.5 rounded-none bg-zinc-950 hover:bg-zinc-800 text-white transition active:scale-95 shadow-sm border border-zinc-800"
+                           title="Open link in new tab"
+                         >
+                           <ExternalLink size={16} />
+                         </button>
+                       )}
+ 
+                       {/* Recreate & Design Action */}
+                       <button
+                         onClick={handleCustomizeActiveResult}
+                         className="p-2.5 rounded-none bg-[var(--md-sys-color-primary,#6750A4)] text-white hover:opacity-90 transition active:scale-95 shadow-sm border border-black/10"
+                         title="Personalize / Redesign this code"
+                       >
+                         <Sparkles size={16} />
+                       </button>
+ 
+                       {/* Save Explicit Action */}
+                       {!hasSavedActiveResult && (
+                         <button
+                           onClick={handleSaveActiveResult}
+                           className="p-2.5 rounded-none bg-white hover:bg-zinc-50 text-zinc-900 border border-zinc-300 shadow-sm transition active:scale-95"
+                           title="Save to history list"
+                         >
+                           <Bookmark size={16} />
+                         </button>
+                       )}
+ 
+                       {/* Dismiss Result Button */}
+                       <button
+                         onClick={handleDismissActiveResult}
+                         className="p-2.5 rounded-none hover:bg-zinc-200/80 text-zinc-600 transition active:scale-95 border border-transparent"
+                         title="Dismiss"
+                       >
+                         <X size={16} />
+                       </button>
+ 
+                     </div>
+                   </div>
+                 </motion.div>
+               )}
+             </AnimatePresence>
+ 
+             {/* Error Center Sheet overlay (within fullscreen reader) */}
+             {errorMsg && (
+               <div className="absolute inset-0 flex items-center justify-center p-6 bg-zinc-950/85 backdrop-blur-lg z-40 text-center">
+                 <div className="max-w-md w-full rounded-none p-6 bg-white border border-zinc-200 shadow-2xl flex flex-col items-center animate-in scale-in duration-300 text-zinc-950">
+                   <div className="p-4 rounded-none border border-zinc-200 mb-4 text-red-600 bg-red-50">
+                     <CameraOff size={36} />
+                   </div>
+                   <h3 className="text-lg font-bold tracking-tight mb-2">
+                     Camera Access Needed
+                   </h3>
+                   <p className="text-xs opacity-75 mb-6 leading-relaxed">
+                     {errorMsg}
+                   </p>
+                   
+                   <div className="flex gap-3 items-center w-full">
+                     <button
+                       type="button"
+                       onClick={() => {
+                         setErrorMsg('');
+                         startScanning(selectedDeviceId);
+                       }}
+                       className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-none text-xs font-bold tracking-wide shadow-md bg-[var(--md-sys-color-primary,#6750A4)] hover:opacity-95 text-white active:scale-95 transition"
+                     >
+                       <Camera size={14} />
+                       <span>Retry</span>
+                     </button>
+ 
+                     <button
+                       type="button"
+                       onClick={() => setIsFullscreenScannerOpen(false)}
+                       className="flex-1 px-6 py-3 rounded-none text-xs font-bold tracking-wide border border-zinc-300 hover:bg-zinc-50 text-zinc-800 active:scale-95 transition"
+                     >
+                       Cancel
+                     </button>
+                   </div>
+                 </div>
+               </div>
+             )}
           </motion.div>
         )}
       </AnimatePresence>
