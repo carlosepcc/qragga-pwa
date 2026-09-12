@@ -95,6 +95,11 @@ export interface MaterialPalette {
   onSurface: string;
   surfaceVariant: string;
   onSurfaceVariant: string;
+  surfaceContainerLowest: string;
+  surfaceContainerLow: string;
+  surfaceContainer: string;
+  surfaceContainerHigh: string;
+  surfaceContainerHighest: string;
   background: string;
   onBackground: string;
   outline: string;

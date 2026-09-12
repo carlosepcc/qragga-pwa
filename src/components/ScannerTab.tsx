@@ -56,6 +56,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const scanningRef = useRef<boolean>(false);
 
   // Initialize ZXing Reader
   useEffect(() => {
@@ -73,8 +74,8 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
         }
       })
       .catch((err) => {
-        console.error('Error listing cameras:', err);
-        setErrorMsg('Camera access failed or is blocked. Try uploading an image file instead.');
+        console.error('Error listing cameras on mount:', err);
+        // Do not block the user with a fatal error message immediately, as permissions may be prompted when launching.
       });
 
     return () => {
@@ -84,6 +85,7 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
 
   // Stop camera stream safely
   const stopCamera = () => {
+    scanningRef.current = false;
     if (codeReaderRef.current) {
       codeReaderRef.current.reset();
     }
@@ -104,19 +106,55 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
     setErrorMsg('');
     setScanResult(null);
 
+    // Verify browser support for media devices (required for Chrome/Android secure contexts)
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setErrorMsg('Camera access is not supported by your browser or in this window. If you are inside an app container, please tap the top-right menu to open this app directly in a new browser tab.');
+      return;
+    }
+
     try {
       setIsScanning(true);
+      scanningRef.current = true;
+
+      // Force prompt the browser for camera permissions explicitly before ZXing initialization.
+      // This ensures Chrome for Android displays the native prompt and registers permission under site settings.
+      let tempStream: MediaStream | null = null;
+      try {
+        tempStream = await navigator.mediaDevices.getUserMedia({ 
+          video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: 'environment' } 
+        });
+        // Stop the temp stream immediately; we only wanted to ensure permissions are granted and active
+        tempStream.getTracks().forEach(track => track.stop());
+      } catch (permErr: any) {
+        console.warn('Explicit getUserMedia permission check failed or denied:', permErr);
+        // Throw to the catch block so the proper permission denied instructions are shown to the user
+        throw permErr;
+      }
       
-      // We start decoding from video device
+      // We start decoding from video device. Use deviceId or undefined (default constraint)
       await codeReaderRef.current.decodeFromVideoDevice(
-        deviceId,
+        deviceId || undefined,
         videoRef.current,
         (result: Result | null, err: any) => {
-          if (result && isScanning) {
+          if (result && scanningRef.current) {
             handleScanSuccess(result);
           }
         }
       );
+
+      // Refresh devices list after stream starts successfully (as permissions are now guaranteed)
+      try {
+        const devices = await codeReaderRef.current.listVideoInputDevices();
+        setVideoDevices(devices);
+        if (devices.length > 0) {
+          const backCam = devices.find(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('environment'));
+          if (!selectedDeviceId) {
+            setSelectedDeviceId(backCam ? backCam.deviceId : devices[0].deviceId);
+          }
+        }
+      } catch (deviceErr) {
+        console.error('Error listing cameras after permission:', deviceErr);
+      }
 
       // Try to acquire the stream to detect torch/flash capability
       // ZXing manages the video element stream, we can inspect its tracks
@@ -134,8 +172,18 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
 
     } catch (err: any) {
       console.error('Failed to start camera scan:', err);
-      setErrorMsg('Could not open camera stream. Make sure permissions are granted.');
       setIsScanning(false);
+      scanningRef.current = false;
+
+      let errMsg = 'Could not open camera stream. Make sure permissions are granted and the camera is not in use by another app.';
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        errMsg = 'Camera permission denied. To enable on Chrome for Android: tap the connection settings/sliders icon to the left of the URL bar, select "Site settings", find "Camera", and set it to "Allow".';
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        errMsg = 'No camera device found on this system.';
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        errMsg = 'Camera is already in use by another application or tab. Please close other apps and try again.';
+      }
+      setErrorMsg(errMsg);
     }
   };
 
@@ -306,114 +354,108 @@ export const ScannerTab: React.FC<ScannerTabProps> = ({
               borderColor: 'var(--md-sys-color-outline-variant, #CAC4D0)',
             }}
           >
-            {isScanning ? (
-              <>
-                <video
-                  ref={videoRef}
-                  className="w-full h-full object-cover rounded-3xl"
-                  playsInline
-                  muted
-                />
-                
-                {/* Laser animation overlays */}
-                <div className="absolute inset-0 border-[32px] border-black/40 pointer-events-none flex items-center justify-center">
-                  <div className="w-full h-full border-2 border-dashed border-[var(--md-sys-color-primary)] relative rounded-xl opacity-90">
-                    {/* Pulsing Target corners */}
-                    <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-[var(--md-sys-color-primary)] -mt-1 -ml-1"></div>
-                    <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-[var(--md-sys-color-primary)] -mt-1 -mr-1"></div>
-                    <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-[var(--md-sys-color-primary)] -mb-1 -ml-1"></div>
-                    <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-[var(--md-sys-color-primary)] -mb-1 -mr-1"></div>
-                    
-                    {/* Laser scanning line */}
-                    <div className="absolute w-full h-[3px] bg-red-500 top-0 left-0 animate-[scan_2s_infinite_linear] shadow-[0_0_10px_#ef4444]"></div>
-                  </div>
-                </div>
-
-                {/* Over-camera Floating indicators */}
-                <div className="absolute top-4 right-4 flex gap-2">
-                  {hasFlash && (
-                    <button
-                      onClick={toggleTorch}
-                      className="p-3 rounded-full shadow bg-black/60 text-white hover:bg-black/80 transition active:scale-90"
-                      title="Toggle flashlight"
-                    >
-                      {torchOn ? <ZapOff size={18} /> : <Zap size={18} />}
-                    </button>
-                  )}
+            {/* Camera Viewport */}
+            <div className={`w-full h-full relative ${isScanning ? 'block' : 'hidden'}`}>
+              <video
+                ref={videoRef}
+                className="w-full h-full object-cover rounded-3xl"
+                playsInline
+                muted
+              />
+              
+              {/* Laser animation overlays */}
+              <div className="absolute inset-0 border-[32px] border-black/40 pointer-events-none flex items-center justify-center">
+                <div className="w-full h-full border-2 border-dashed border-[var(--md-sys-color-primary)] relative rounded-xl opacity-90">
+                  {/* Pulsing Target corners */}
+                  <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-[var(--md-sys-color-primary)] -mt-1 -ml-1"></div>
+                  <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-[var(--md-sys-color-primary)] -mt-1 -mr-1"></div>
+                  <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-[var(--md-sys-color-primary)] -mb-1 -ml-1"></div>
+                  <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-[var(--md-sys-color-primary)] -mb-1 -mr-1"></div>
                   
-                  <button
-                    onClick={stopCamera}
-                    className="px-4 py-2 rounded-full text-xs font-semibold shadow bg-red-600 text-white hover:bg-red-700 transition active:scale-90"
-                  >
-                    Stop Camera
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div 
-                className={`w-full h-full flex flex-col items-center justify-center p-6 text-center transition-all ${dragActive ? 'scale-[0.98]' : ''}`}
-                onDragOver={onDragOver}
-                onDragLeave={onDragLeave}
-                onDrop={onDrop}
-                style={{
-                  border: dragActive ? '3px dashed var(--md-sys-color-primary)' : '1px solid transparent',
-                  backgroundColor: dragActive ? 'var(--md-sys-color-primary-container, #EADDFF)' : 'transparent',
-                }}
-              >
-                <div 
-                  className="p-4 rounded-3xl mb-4"
-                  style={{
-                    backgroundColor: 'var(--md-sys-color-primary-container, #EADDFF)',
-                    color: 'var(--md-sys-color-on-primary-container, #21005D)',
-                  }}
-                >
-                  <Camera size={40} className="opacity-90" />
-                </div>
-                
-                <h3 className="text-lg font-bold tracking-tight mb-1 text-[var(--md-sys-color-on-surface)]">
-                  Start Camera Scan
-                </h3>
-                <p className="text-xs max-w-xs opacity-75 mb-6 text-[var(--md-sys-color-on-surface)] leading-relaxed">
-                  Grant camera permissions to scan instantly, or drag and drop a barcode picture here.
-                </p>
-
-                <div className="flex flex-col sm:flex-row gap-3 items-center">
-                  {videoDevices.length > 0 ? (
-                    <button
-                      onClick={() => startScanning(selectedDeviceId)}
-                      className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold tracking-wide shadow-md hover:shadow-lg hover:opacity-95 transition-all duration-300 active:scale-95"
-                      style={{
-                        backgroundColor: 'var(--md-sys-color-primary, #6750A4)',
-                        color: 'var(--md-sys-color-on-primary, #FFFFFF)',
-                      }}
-                    >
-                      <Camera size={16} />
-                      <span>Launch Camera</span>
-                    </button>
-                  ) : (
-                    <p className="text-xs text-red-500 italic mb-2">
-                      Checking for available cameras...
-                    </p>
-                  )}
-
-                  <label className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold tracking-wide border cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition active:scale-95"
-                    style={{
-                      color: 'var(--md-sys-color-primary, #6750A4)',
-                      borderColor: 'var(--md-sys-color-outline, #79747E)',
-                    }}
-                  >
-                    <ImageIcon size={16} />
-                    <span>Upload Image</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={onFileChange}
-                    />
-                  </label>
+                  {/* Laser scanning line */}
+                  <div className="absolute w-full h-[3px] bg-red-500 top-0 left-0 animate-[scan_2s_infinite_linear] shadow-[0_0_10px_#ef4444]"></div>
                 </div>
               </div>
-            )}
+
+              {/* Over-camera Floating indicators */}
+              <div className="absolute top-4 right-4 flex gap-2">
+                {hasFlash && (
+                  <button
+                    onClick={toggleTorch}
+                    className="p-3 rounded-full shadow bg-black/60 text-white hover:bg-black/80 transition active:scale-90"
+                    title="Toggle flashlight"
+                  >
+                    {torchOn ? <ZapOff size={18} /> : <Zap size={18} />}
+                  </button>
+                )}
+                
+                <button
+                  onClick={stopCamera}
+                  className="px-4 py-2 rounded-full text-xs font-semibold shadow bg-red-600 text-white hover:bg-red-700 transition active:scale-90"
+                >
+                  Stop Camera
+                </button>
+              </div>
+            </div>
+
+            {/* Launch Camera / Drag & Drop Placeholder Viewport */}
+            <div 
+              className={`w-full h-full flex-col items-center justify-center p-6 text-center transition-all ${isScanning ? 'hidden' : 'flex'} ${dragActive ? 'scale-[0.98]' : ''}`}
+              onDragOver={onDragOver}
+              onDragLeave={onDragLeave}
+              onDrop={onDrop}
+              style={{
+                border: dragActive ? '3px dashed var(--md-sys-color-primary)' : '1px solid transparent',
+                backgroundColor: dragActive ? 'var(--md-sys-color-primary-container, #EADDFF)' : 'transparent',
+              }}
+            >
+              <div 
+                className="p-4 rounded-3xl mb-4"
+                style={{
+                  backgroundColor: 'var(--md-sys-color-primary-container, #EADDFF)',
+                  color: 'var(--md-sys-color-on-primary-container, #21005D)',
+                }}
+              >
+                <Camera size={40} className="opacity-90" />
+              </div>
+              
+              <h3 className="text-lg font-bold tracking-tight mb-1 text-[var(--md-sys-color-on-surface)]">
+                Start Camera Scan
+              </h3>
+              <p className="text-xs max-w-xs opacity-75 mb-6 text-[var(--md-sys-color-on-surface)] leading-relaxed">
+                Grant camera permissions to scan instantly, or drag and drop a barcode picture here.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-3 items-center">
+                <button
+                  onClick={() => startScanning(selectedDeviceId)}
+                  className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold tracking-wide shadow-md hover:shadow-lg hover:opacity-95 transition-all duration-300 active:scale-95"
+                  style={{
+                    backgroundColor: 'var(--md-sys-color-primary, #6750A4)',
+                    color: 'var(--md-sys-color-on-primary, #FFFFFF)',
+                  }}
+                >
+                  <Camera size={16} />
+                  <span>Launch Camera</span>
+                </button>
+
+                <label className="flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold tracking-wide border cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition active:scale-95"
+                  style={{
+                    color: 'var(--md-sys-color-primary, #6750A4)',
+                    borderColor: 'var(--md-sys-color-outline, #79747E)',
+                  }}
+                >
+                  <ImageIcon size={16} />
+                  <span>Upload Image</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={onFileChange}
+                  />
+                </label>
+              </div>
+            </div>
           </div>
 
           {/* Camera Selector */}
